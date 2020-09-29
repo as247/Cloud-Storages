@@ -294,7 +294,11 @@ class GoogleDrive implements StorageContract
 			$opts['addParents'] = $newParentId;
 			$opts['removeParents'] = $oldParent;
 		}
-		$this->service->filesUpdate($from->getId(), $file);
+
+		$result=$this->service->filesUpdate($from->getId(), $file, $opts);
+		if(!in_array($newParentId,$result->getParents())){
+			throw UnableToMoveFile::fromLocationTo($fromPath, $toPath,'Service update failure');
+		}
 		$this->cache->rename($fromPath, $toPath);
 		$this->logger->log("Moved file: $fromPath -> $toPath");
 	}
@@ -410,7 +414,7 @@ class GoogleDrive implements StorageContract
 				if ($fileObjs instanceof \Google_Service_Drive_FileList) {
 					foreach ($fileObjs as $obj) {
 						$id = $obj->getId();
-						$result = $this->service->normalizeMetadata($obj, $directory . '/' . $obj->getName());
+						$result = $this->service->normalizeMetadata($obj, rtrim($directory,'\/') . '/' . $obj->getName());
 						yield $id => $result;
 						$this->cache->put($result['path'], $obj);
 					}

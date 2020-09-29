@@ -48,7 +48,7 @@ class OneDrive implements StorageContract
 		try {
 			$results = $this->service->listChildren($directory);
 			foreach ($results as $id => $result) {
-				$result = $this->service->normalizeMetadata($result, $directory . '/' . $result['name']);
+				$result = $this->service->normalizeMetadata($result, rtrim($directory,'\/') . '/' . $result['name']);
 				yield $id => $result;
 				if ($recursive && $result['type'] === 'dir') {
 					yield from $this->listContents($result['path'], $recursive);
