@@ -7,7 +7,8 @@ namespace As247\CloudStorages\Service;
 class Logger
 {
 	protected $logDir;
-	protected $enabled=false;
+	protected $enabled=true;
+	protected $num_queries=0;
 	public function __construct($logDir='')
     {
         $this->logDir=$logDir;
@@ -33,14 +34,22 @@ class Logger
         }
         $query=json_encode($query,JSON_PRETTY_PRINT);
         $this->write("{$cmd} $query",'query');
+        $this->num_queries++;
 		return $this;
 	}
+	public function getNumQueries(){
+		return $this->num_queries;
+	}
 	protected function write($line,$file){
-	    if(!$this->enabled){
+	    if(!$this->enabled || !$this->logDir){
 	        return ;
         }
 	    $time=date('Y-m-d h:i:s');
-	    file_put_contents($this->logDir."/$file.log",$time.' '.$line.' Trace:'.$this->debugBacktraceSummary().PHP_EOL,FILE_APPEND);
+	    file_put_contents($this->logDir."/$file.log",
+			$time.' '.
+				$line.
+				'. Trace:'.
+			$this->debugBacktraceSummary().PHP_EOL,FILE_APPEND);
     }
     public function enable($flag=true){
 	    $previous= $this->enabled;

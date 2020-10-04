@@ -3,8 +3,6 @@
 
 namespace As247\CloudStorages\Storage;
 
-
-use As247\CloudStorages\Contracts\Storage\StorageContract;
 use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\InvalidVisibilityProvided;
 use As247\CloudStorages\Exception\UnableToCreateDirectory;
@@ -13,16 +11,16 @@ use As247\CloudStorages\Exception\UnableToDeleteFile;
 use As247\CloudStorages\Exception\UnableToReadFile;
 use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
 use As247\CloudStorages\Exception\UnableToWriteFile;
-use As247\CloudStorages\Service\GoogleDrive;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
+use Generator;
 use GuzzleHttp\Exception\ClientException;
 use Microsoft\Graph\Exception\GraphException;
 use As247\CloudStorages\Service\OneDrive as OneDriveService;
 use Microsoft\Graph\Graph;
 use Throwable;
 
-class OneDrive implements StorageContract
+class OneDrive extends Storage
 {
 	/** @var Graph */
 	protected $service;
@@ -30,6 +28,8 @@ class OneDrive implements StorageContract
 	public function __construct(Graph $graph,$options=[])
 	{
 		$this->service = new OneDriveService($graph,$options);
+		$this->setLogger($this->service->getLogger());
+		$this->setupCache($options);
 	}
 
 	public function getService()
@@ -40,7 +40,7 @@ class OneDrive implements StorageContract
 	/**
 	 * @param string $directory
 	 * @param bool $recursive
-	 * @return \Generator
+	 * @return Generator
 	 * @throws GraphException
 	 */
 	public function listContents(string $directory = '', bool $recursive = false): iterable
@@ -131,12 +131,12 @@ class OneDrive implements StorageContract
 	 */
 	public function setVisibility(string $path, $visibility): void
 	{
-		if ($visibility === StorageContract::VISIBILITY_PUBLIC) {
+		if ($visibility === Storage::VISIBILITY_PUBLIC) {
 			$this->service->publish($path);
-		} elseif ($visibility === StorageContract::VISIBILITY_PRIVATE) {
+		} elseif ($visibility === Storage::VISIBILITY_PRIVATE) {
 			$this->service->unPublish($path);
 		} else {
-			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [StorageContract::VISIBILITY_PUBLIC, StorageContract::VISIBILITY_PRIVATE]));
+			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [Storage::VISIBILITY_PUBLIC, Storage::VISIBILITY_PRIVATE]));
 		}
 	}
 

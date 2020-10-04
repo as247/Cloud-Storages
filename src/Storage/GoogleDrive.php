@@ -3,11 +3,8 @@
 
 namespace As247\CloudStorages\Storage;
 
-
-use As247\CloudStorages\Cache\NullCache;
 use As247\CloudStorages\Cache\PathObjectCache;
 use As247\CloudStorages\Contracts\Cache\PathCacheInterface;
-use As247\CloudStorages\Contracts\Storage\StorageContract;
 use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\InvalidStreamProvided;
 use As247\CloudStorages\Exception\InvalidVisibilityProvided;
@@ -20,18 +17,18 @@ use As247\CloudStorages\Exception\UnableToReadFile;
 use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
 use As247\CloudStorages\Exception\UnableToSetVisibility;
 use As247\CloudStorages\Exception\UnableToWriteFile;
-use As247\CloudStorages\Service\HasLogger;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
 use As247\CloudStorages\Support\Path;
+use Exception;
+use Generator;
 use Google_Service_Drive;
 use Google_Service_Drive_DriveFile;
-use Closure;
-use As247\CloudStorages\Contracts\Cache\CacheInterface;
 use As247\CloudStorages\Service\GoogleDrive as GoogleDriveService;
+use Google_Service_Drive_FileList;
 use GuzzleHttp\Psr7;
 
-class GoogleDrive implements StorageContract
+class GoogleDrive extends Storage
 {
 	/**
 	 * MIME type of directory
@@ -52,7 +49,7 @@ class GoogleDrive implements StorageContract
 	 */
 	protected $cache;
 	protected $maxFolderLevel = 128;
-	use HasLogger;
+
 	public function __construct(Google_Service_Drive $service, $options)
 	{
 		if (is_string($options)) {
@@ -78,19 +75,7 @@ class GoogleDrive implements StorageContract
 	{
 		$root = $options['root'];
 		$this->root = $root;
-		if(!isset($options['cache'])){
-			$options['cache']=new PathObjectCache();
-		}
-		if($options['cache'] instanceof Closure){
-			$options['cache']=$options['cache']();
-		}
-		if($options['cache']===false || $options['cache']==='null'){
-			$options['cache']=new NullCache();
-		}
-		if(!$options['cache'] instanceof CacheInterface){
-			$options['cache']=new PathObjectCache();
-		}
-		$this->cache = $options['cache'];
+		$this->setupCache($options);
 	}
 	protected function initializeCacheRoot(){
 		$dRoot = new Google_Service_Drive_DriveFile();
@@ -290,6 +275,7 @@ class GoogleDrive implements StorageContract
 		$newParentId = $this->ensureDirectory($dirName);
 		$file = new Google_Service_Drive_DriveFile();
 		$file->setName($fileName);
+		$opts=[];
 		if ($newParentId !== $oldParent) {
 			$opts['addParents'] = $newParentId;
 			$opts['removeParents'] = $oldParent;
@@ -308,7 +294,7 @@ class GoogleDrive implements StorageContract
 	 * Upload|Update item
 	 *
 	 * @param string $path
-	 * @param string|resource $contents
+	 * @param $contents
 	 * @param Config|null $config
 	 * @return FileAttributes
 	 * @throws FileNotFoundException
@@ -369,7 +355,7 @@ class GoogleDrive implements StorageContract
 	/**
 	 * @param string $directory
 	 * @param bool $recursive
-	 * @return \Generator
+	 * @return Generator
 	 */
 	public function listContents(string $directory, bool $recursive = false): iterable
 	{
@@ -411,7 +397,7 @@ class GoogleDrive implements StorageContract
 					$parameters['pageToken'] = $pageToken;
 				}
 				$fileObjs = $this->service->filesListFiles($parameters);
-				if ($fileObjs instanceof \Google_Service_Drive_FileList) {
+				if ($fileObjs instanceof Google_Service_Drive_FileList) {
 					foreach ($fileObjs as $obj) {
 						$id = $obj->getId();
 						$result = $this->service->normalizeMetadata($obj, rtrim($directory,'\/') . '/' . $obj->getName());
@@ -422,7 +408,7 @@ class GoogleDrive implements StorageContract
 				} else {
 					$pageToken = NULL;
 				}
-			} catch (\Exception $e) {
+			} catch (Exception $e) {
 				$pageToken = NULL;
 			}
 		} while ($pageToken);
@@ -462,12 +448,12 @@ class GoogleDrive implements StorageContract
 	 */
 	public function setVisibility(string $path, $visibility): void
 	{
-		if ($visibility === StorageContract::VISIBILITY_PUBLIC) {
+		if ($visibility === Storage::VISIBILITY_PUBLIC) {
 			$this->publish($path);
-		} elseif ($visibility === StorageContract::VISIBILITY_PRIVATE) {
+		} elseif ($visibility === Storage::VISIBILITY_PRIVATE) {
 			$this->unPublish($path);
 		} else {
-			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [StorageContract::VISIBILITY_PUBLIC, StorageContract::VISIBILITY_PRIVATE]));
+			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [Storage::VISIBILITY_PUBLIC, Storage::VISIBILITY_PRIVATE]));
 		}
 	}
 
@@ -521,7 +507,6 @@ class GoogleDrive implements StorageContract
 			$this->initializeCacheRoot();
 		}
 		$parent = $this->cache->get('/');
-
 		while (null !== ($name = array_shift($paths))) {
 			$parentPaths = $currentPaths;
 			$currentPaths[] = $name;

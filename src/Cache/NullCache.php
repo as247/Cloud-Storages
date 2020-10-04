@@ -32,7 +32,7 @@ class NullCache implements PathCacheInterface
 	{
 		$key=Path::clean($key);
 		if($key==='/'){
-			return true;
+			return isset($this->root);
 		}
 		return false;
 	}
