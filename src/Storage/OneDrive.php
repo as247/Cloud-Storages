@@ -19,6 +19,7 @@ use Microsoft\Graph\Exception\GraphException;
 use As247\CloudStorages\Service\OneDrive as OneDriveService;
 use Microsoft\Graph\Graph;
 use Throwable;
+use Traversable;
 
 class OneDrive extends Storage
 {
@@ -43,7 +44,7 @@ class OneDrive extends Storage
 	 * @return Generator
 	 * @throws GraphException
 	 */
-	public function listContents(string $directory = '', bool $recursive = false): iterable
+	public function listContents(string $directory = '', bool $recursive = false): Traversable
 	{
 		try {
 			$results = $this->service->listChildren($directory);

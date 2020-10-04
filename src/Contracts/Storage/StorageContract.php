@@ -21,6 +21,7 @@ use As247\CloudStorages\Support\StorageAttributes;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Exception\FilesystemException;
 use Psr\Http\Message\StreamInterface;
+use Traversable;
 
 interface StorageContract
 {
@@ -91,10 +92,10 @@ interface StorageContract
 	/**
 	 * @param string $path
 	 * @param bool $deep
-	 * @return iterable<StorageAttributes>
+	 * @return Traversable<StorageAttributes>
 	 * @throws FilesystemException
 	 */
-	public function listContents(string $path, bool $deep): iterable;
+	public function listContents(string $path, bool $deep): Traversable;
 
 	/**
 	 * @param string $source

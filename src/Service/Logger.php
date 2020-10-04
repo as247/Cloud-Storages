@@ -7,7 +7,7 @@ namespace As247\CloudStorages\Service;
 class Logger
 {
 	protected $logDir;
-	protected $enabled=true;
+	protected $enabled=false;
 	protected $num_queries=0;
 	public function __construct($logDir='')
     {

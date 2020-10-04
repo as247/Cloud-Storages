@@ -27,6 +27,7 @@ use Google_Service_Drive_DriveFile;
 use As247\CloudStorages\Service\GoogleDrive as GoogleDriveService;
 use Google_Service_Drive_FileList;
 use GuzzleHttp\Psr7;
+use Traversable;
 
 class GoogleDrive extends Storage
 {
@@ -357,7 +358,7 @@ class GoogleDrive extends Storage
 	 * @param bool $recursive
 	 * @return Generator
 	 */
-	public function listContents(string $directory, bool $recursive = false): iterable
+	public function listContents(string $directory, bool $recursive = false): Traversable
 	{
 		if (!$this->isDirectory($directory)) {
 			yield from [];
