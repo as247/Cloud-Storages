@@ -74,7 +74,7 @@ class GoogleDrive
 	public function __construct(Google_Service_Drive $service,$options=[])
 	{
 		$this->service=$service;
-		$this->setupLogger($options['logging']??'');
+		$this->setupLogger($options);
 		$this->options = array_replace_recursive(static::$defaultOptions, $options);
 		$this->publishPermission = $this->options['publishPermission'];
 

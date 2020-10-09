@@ -66,7 +66,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->service->upload($path, $contents);
-			$this->getCache()->forget($path);
+			$this->getCache()->forget(dirname($path));
 			if ($config && $visibility = $config->get('visibility')) {
 				$this->setVisibility($path, $visibility);
 			}
@@ -179,6 +179,7 @@ class OneDrive extends Storage
 	public function getMetadata($path): FileAttributes
 	{
 		try {
+			//echo PHP_EOL.'metadata: '.$path.PHP_EOL;
 			if($this->cache->has($path)){
 				$meta=$this->cache->get($path);
 				if(!$meta){

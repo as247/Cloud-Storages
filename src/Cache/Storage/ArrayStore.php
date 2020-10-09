@@ -1,23 +1,14 @@
 <?php
 
 
-namespace As247\CloudStorages\Cache;
-
-
-use As247\CloudStorages\Contracts\Cache\PathCacheInterface;
+namespace As247\CloudStorages\Cache\Storage;
+use As247\CloudStorages\Contracts\Cache\Store;
 use As247\CloudStorages\Support\Path;
 
-
-class PathObjectCache implements PathCacheInterface
+class ArrayStore implements Store
 {
 	protected $files=[];
 	protected $completed=[];
-	protected $length=0;
-	public function __construct()
-	{
-
-	}
-
 
 	public function put($key, $data, $seconds=3600)
 	{
@@ -51,7 +42,6 @@ class PathObjectCache implements PathCacheInterface
 
 	public function flush()
 	{
-		$this->length=0;
 		$root=$this->get('/');
 		$this->files=[];
 		$this->put('/',$root);
@@ -64,6 +54,12 @@ class PathObjectCache implements PathCacheInterface
 		$deleted=empty($to);
 		$forget=$to===null;
 		$to=Path::clean($to);
+		//Destination tree changed we should clean up all parent
+		$tmpTo=$to;
+		while($tmpTo=dirname($tmpTo) && $tmpTo!=='/'){
+			unset($this->files[$tmpTo]);
+			unset($this->completed[$tmpTo]);
+		}
 		foreach ($this->files as $key=>$file){
 			if($deleted) {
 				if(strpos($key,$from)===0){

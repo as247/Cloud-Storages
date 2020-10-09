@@ -14,21 +14,15 @@ trait HasLogger
         $this->logger=$logger;
         return $this;
     }
-    protected function setupLogger($logging){
+    protected function setupLogger($options){
     	$dir=__DIR__.'/../../';
-    	$enable=false;
-    	if($logging) {
-			if (is_string($logging)) {
-				$dir = $logging;
-				$enable = true;
-			} elseif (is_bool($logging)) {
-				$enable = $logging;
-			}elseif(is_array($logging)){
-				$dir=$logging['dir']??'';
-				$enable=$logging['enable']??false;
-			}
+    	$log=$options['log']??false;
+    	if(is_string($log)){
+			$dir=$log;
+			$log=true;
 		}
+    	$dir=$options['log.dir']??$dir;
 		$this->logger=new Logger($dir);
-    	$this->logger->enable($enable);
+    	$this->logger->enable($log);
 	}
 }

@@ -2,11 +2,7 @@
 
 
 namespace As247\CloudStorages\Cache;
-
-
-use As247\CloudStorages\Contracts\Cache\CacheInterface;
-
-class TempCache implements CacheInterface
+class TempCache
 {
 	protected $cacheDir;
 	function __construct($key)

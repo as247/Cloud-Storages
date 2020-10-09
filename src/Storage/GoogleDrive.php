@@ -3,8 +3,6 @@
 
 namespace As247\CloudStorages\Storage;
 
-use As247\CloudStorages\Cache\PathObjectCache;
-use As247\CloudStorages\Contracts\Cache\PathCacheInterface;
 use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\InvalidStreamProvided;
 use As247\CloudStorages\Exception\InvalidVisibilityProvided;
@@ -45,9 +43,7 @@ class GoogleDrive extends Storage
 	protected $service;
 
 	protected $root;//Root id
-	/**
-	 * @var PathObjectCache|PathCacheInterface
-	 */
+
 	protected $cache;
 	protected $maxFolderLevel = 128;
 
@@ -428,6 +424,7 @@ class GoogleDrive extends Storage
 			throw UnableToSetVisibility::atLocation($path, 'File not found');
 		}
 		$this->service->publish($file);
+		$this->cache->put($path,$file);
 	}
 
 	/**
@@ -441,6 +438,7 @@ class GoogleDrive extends Storage
 			throw UnableToSetVisibility::atLocation($path, 'File not found');
 		}
 		$this->service->unPublish($file);
+		$this->cache->put($path,$file);
 	}
 
 	/**

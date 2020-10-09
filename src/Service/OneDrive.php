@@ -29,7 +29,7 @@ class OneDrive
 	public function __construct(Graph $graph,$options=[])
 	{
 		$this->options=$options;
-		$this->setupLogger($options['logging']??'');
+		$this->setupLogger($options);
 	    $this->graph=$graph;
 	}
 

@@ -9,8 +9,7 @@
 namespace As247\CloudStorages\Support;
 
 use As247\CloudStorages\Cache\TempCache;
-use As247\CloudStorages\Contracts\Cache\CacheInterface;
-use GuzzleHttp\ClientInterface;
+use As247\CloudStorages\Contracts\Cache\Store;
 use GuzzleHttp\Client;
 
 
@@ -23,7 +22,7 @@ class OneDriveOauth
 	protected $tenantId='common';
 	protected $httpClient;
 	/**
-	 * @var CacheInterface
+	 * @var Store
 	 */
 	protected $cache;
 	protected $tokenEndpoint = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token';
@@ -35,7 +34,7 @@ class OneDriveOauth
 		'scope' => 'files.readwrite.all offline_access',
 	];
 
-	public function __construct(CacheInterface $cache = null)
+	public function __construct(Store $cache = null)
 	{
 		$this->cache = $cache;
 	}
@@ -138,7 +137,7 @@ class OneDriveOauth
 	}
 
 	/**
-	 * @return TempCache|CacheInterface
+	 * @return TempCache|Store
 	 */
 	public function getCache()
 	{
@@ -202,7 +201,7 @@ class OneDriveOauth
 	 * @param $cache
 	 * @return OneDriveOauth
 	 */
-	public function setCache(CacheInterface $cache): OneDriveOauth
+	public function setCache(Store $cache): OneDriveOauth
 	{
 		$this->cache = $cache;
 		return $this;
