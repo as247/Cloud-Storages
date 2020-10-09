@@ -13,6 +13,7 @@ use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
 use As247\CloudStorages\Exception\UnableToWriteFile;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
+use As247\CloudStorages\Support\Path;
 use Generator;
 use GuzzleHttp\Exception\ClientException;
 use Microsoft\Graph\Exception\GraphException;
@@ -66,7 +67,10 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->service->upload($path, $contents);
-			$this->getCache()->forget(dirname($path));
+			$firstSegment=Path::explode($path)[1]??'';
+			if($firstSegment) {
+				$this->getCache()->forget($firstSegment);
+			}
 			if ($config && $visibility = $config->get('visibility')) {
 				$this->setVisibility($path, $visibility);
 			}
@@ -117,6 +121,10 @@ class OneDrive extends Storage
 	{
 		try {
 			$response = $this->service->createDirectory($path);
+			$firstSegment=Path::explode($path)[1]??'';
+			if($firstSegment) {
+				$this->getCache()->forget($firstSegment);
+			}
 			$file = FileAttributes::fromArray($this->service->normalizeMetadata($response, $path));
 			if (!$file->isDir()) {
 				throw UnableToCreateDirectory::atLocation($path, 'File already exists');

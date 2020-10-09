@@ -51,17 +51,24 @@ class ArrayStore implements Store
 	public function rename($from, $to)
 	{
 		$from=Path::clean($from);
-		$deleted=empty($to);
 		$forget=$to===null;
-		$to=Path::clean($to);
-		//Destination tree changed we should clean up all parent
-		$tmpTo=$to;
-		while($tmpTo=dirname($tmpTo) && $tmpTo!=='/'){
-			unset($this->files[$tmpTo]);
-			unset($this->completed[$tmpTo]);
+		if($to) {
+			$to = Path::clean($to);
+			//Destination tree changed we should clean up all parent
+			$tmpTo = $to;
+			while (($tmpTo = Path::clean(dirname($tmpTo))) && $tmpTo!=='/') {
+				unset($this->files[$tmpTo]);
+				unset($this->completed[$tmpTo]);
+			}
 		}
 		foreach ($this->files as $key=>$file){
-			if($deleted) {
+			if($to) {
+				$newKey = Path::replace($from, $to, $key);
+				if ($newKey !== $key) {
+					$this->files[$newKey] = $file;
+					$this->files[$key] = false;
+				}
+			}else{
 				if(strpos($key,$from)===0){
 					if($forget){
 						unset($this->files[$key]);
@@ -69,23 +76,17 @@ class ArrayStore implements Store
 						$this->files[$key] = false;
 					}
 				}
-			}else{
-				$newKey = Path::replace($from, $to, $key);
-				if ($newKey !== $key) {
-					$this->files[$newKey] = $file;
-					$this->files[$key] = false;
-				}
 			}
 		}
 		foreach ($this->completed as $key=>$value){
-			if($deleted){
-				if(strpos($key,$from)===0){
-					unset($this->completed[$key]);
-				}
-			}else {
+			if($to){
 				$newKey = Path::replace($from, $to, $key);
 				if ($newKey !== $key) {
 					$this->completed[$newKey] = $value;
+					unset($this->completed[$key]);
+				}
+			}else {
+				if(strpos($key,$from)===0){
 					unset($this->completed[$key]);
 				}
 			}
