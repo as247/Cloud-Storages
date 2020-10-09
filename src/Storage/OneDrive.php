@@ -64,9 +64,9 @@ class OneDrive extends Storage
 
 	public function writeStream(string $path, $contents, Config $config): void
 	{
-		$this->getCache()->forget($path);
 		try {
 			$this->service->upload($path, $contents);
+			$this->getCache()->forget($path);
 			if ($config && $visibility = $config->get('visibility')) {
 				$this->setVisibility($path, $visibility);
 			}
@@ -90,9 +90,9 @@ class OneDrive extends Storage
 
 	public function delete(string $path): void
 	{
-		$this->getCache()->forget($path);
 		try {
 			$this->service->delete($path);
+			$this->getCache()->forget($path);
 		} catch (ClientException $e) {
 			if ($e->getResponse()->getStatusCode() === 404) {
 				throw FileNotFoundException::create($path);
@@ -105,9 +105,9 @@ class OneDrive extends Storage
 
 	public function deleteDirectory(string $path): void
 	{
-		$this->getCache()->forget($path);
 		try {
 			$this->delete($path);
+			$this->getCache()->forget($path);
 		}catch (UnableToDeleteFile $e){
 			throw UnableToDeleteDirectory::atLocation($e->location(),$e->reason(),$e->getPrevious());
 		}
@@ -135,11 +135,12 @@ class OneDrive extends Storage
 	 */
 	public function setVisibility(string $path, $visibility): void
 	{
-		$this->getCache()->forget($path);
 		if ($visibility === Storage::VISIBILITY_PUBLIC) {
 			$this->service->publish($path);
+			$this->getCache()->forget($path);
 		} elseif ($visibility === Storage::VISIBILITY_PRIVATE) {
 			$this->service->unPublish($path);
+			$this->getCache()->forget($path);
 		} else {
 			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [Storage::VISIBILITY_PUBLIC, Storage::VISIBILITY_PRIVATE]));
 		}
@@ -166,6 +167,7 @@ class OneDrive extends Storage
 	public function copy(string $source, string $destination, Config $config): void
 	{
 		$this->service->copy($source, $destination);
+		$this->getCache()->forget($destination);
 	}
 
 
