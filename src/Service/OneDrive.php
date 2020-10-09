@@ -29,10 +29,7 @@ class OneDrive
 	public function __construct(Graph $graph,$options=[])
 	{
 		$this->options=$options;
-		$this->logger=new Logger($options['logging']['dir']??'');
-		if(isset($options['logging']['enable'])){
-			$this->logger->enable($options['logging']['enable']);
-		}
+		$this->setupLogger($options['logging']??'');
 	    $this->graph=$graph;
 	}
 
@@ -115,7 +112,7 @@ class OneDrive
 				'path' => $newPathParent,
 			],
 		];
-		return $this->graph->createRequest('POST', $endpoint)
+		return $this->createRequest('POST', $endpoint)
 			->attachBody($body)
 			->execute()->getBody();
 	}
@@ -131,7 +128,7 @@ class OneDrive
 			return $this->getItem('/');
 		}
 		$endpoint=$this->getEndpoint($path);
-		return $this->graph->createRequest('PATCH', $endpoint)
+		return $this->createRequest('PATCH', $endpoint)
 			->attachBody([
 				'folder' => new ArrayObject(),
 			])->execute()->getBody();
@@ -144,7 +141,7 @@ class OneDrive
 	 */
 	public function delete($path){
 		$endpoint=$this->getEndpoint($path);
-		return $this->graph->createRequest('DELETE', $endpoint)->execute()->getBody();
+		return $this->createRequest('DELETE', $endpoint)->execute()->getBody();
 	}
 
 	/**
@@ -163,7 +160,7 @@ class OneDrive
 			}
 		}
 		$endpoint=$this->getEndpoint($path,'content',$args);
-		$response=$this->graph->createRequest('GET',$endpoint)->setReturnType('GuzzleHttp\Psr7\Stream')->execute();
+		$response=$this->createRequest('GET',$endpoint)->setReturnType('GuzzleHttp\Psr7\Stream')->execute();
 		/**
 		 * @var Stream $response
 		 */
@@ -179,7 +176,7 @@ class OneDrive
 	 */
 	public function getItem($path,$args=[]){
 		$endpoint=$this->getEndpoint($path,'',$args);
-		$response = $this->graph->createRequest('GET', $endpoint)->execute();
+		$response = $this->createRequest('GET', $endpoint)->execute();
 		return $response->getBody();
 	}
 
@@ -196,7 +193,7 @@ class OneDrive
 			if ($nextPage) {
 				$endpoint = $nextPage;
 			}
-			$response = $this->graph->createRequest('GET', $endpoint)
+			$response = $this->createRequest('GET', $endpoint)
 				->execute();
 			$nextPage = $response->getNextLink();
 			$items = $response->getBody()['value']??[];
@@ -224,7 +221,7 @@ class OneDrive
 				'path' => $newPathParent,
 			],
 		];
-		return $this->graph->createRequest('PATCH', $endpoint)
+		return $this->createRequest('PATCH', $endpoint)
 			->attachBody($body)
 			->execute()->getBody();
 	}
@@ -247,7 +244,7 @@ class OneDrive
 		$this->createDirectory(dirname($path));
 		$stream = stream_for($contents);
 
-		return $this->graph->createRequest('PUT', $endpoint)
+		return $this->createRequest('PUT', $endpoint)
 				->attachBody($stream)
 				->execute()->getBody();
 	}
@@ -259,7 +256,7 @@ class OneDrive
      */
 	public function getPermissions($path){
 		$endpoint=$this->getEndpoint($path,'permissions');
-		$response = $this->graph->createRequest('GET', $endpoint)->execute();
+		$response = $this->createRequest('GET', $endpoint)->execute();
 		return $response->getBody()['value']??[];
 	}
 
@@ -271,7 +268,7 @@ class OneDrive
 	function publish($path){
 		$endpoint=$this->getEndpoint($path,'createLink');
 		$body=['type'=>'view','scope'=>'anonymous'];
-		$response = $this->graph->createRequest('POST', $endpoint)
+		$response = $this->createRequest('POST', $endpoint)
 			->attachBody($body)->execute();
 		return $response->getBody();
 	}
@@ -294,6 +291,10 @@ class OneDrive
 			return ;
 		}
 		$endpoint=$this->getEndpoint($path,'permissions/'.$idToRemove);
-		$this->graph->createRequest('DELETE', $endpoint)->execute();
+		$this->createRequest('DELETE', $endpoint)->execute();
+	}
+	protected function createRequest($requestType, $endpoint){
+		$this->logger->request($requestType,$endpoint);
+		return $this->graph->createRequest($requestType,$endpoint);
 	}
 }

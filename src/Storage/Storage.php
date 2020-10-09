@@ -13,6 +13,9 @@ use As247\CloudStorages\Service\HasLogger;
 
 abstract class Storage implements StorageContract
 {
+	/**
+	 * @var PathCacheInterface
+	 */
 	protected $cache;
 	use HasLogger;
 	protected function setupCache($options){

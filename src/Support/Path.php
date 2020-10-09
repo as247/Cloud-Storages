@@ -35,6 +35,9 @@ class Path
         if(is_array($path)){
             $path=join('/',$path);
         }
+        if(!is_string($path)){
+        	$path=(string)$path;
+		}
 		$path=static::normalizeRelativePath($path);
 		if($return==='string'){
 			$path='/'.join('/',$path);

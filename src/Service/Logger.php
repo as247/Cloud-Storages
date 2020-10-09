@@ -8,15 +8,21 @@ class Logger
 {
 	protected $logDir;
 	protected $enabled=false;
-	protected $num_queries=0;
+	protected $num_requests=0;
+	protected $withTrace=false;
 	public function __construct($logDir='')
     {
         $this->logDir=$logDir;
-        if(is_dir($logDir)){
-            $this->enabled=true;
-        }
     }
-
+	public function enable($flag=true){
+		$previous= $this->enabled;
+		$this->enabled=$flag;
+		return $previous;
+	}
+	public function withTrace($flag=true){
+		$this->withTrace=$flag;
+		return $this;
+	}
     function log($message, $level='debug'){
 	    if(!$this->enabled){
 	        return $this;
@@ -28,34 +34,36 @@ class Logger
 	    return $this;
 	}
 
-	function query($cmd, $query){
+	function request($cmd, $query){
 	    if(!$this->enabled){
 	        return $this;
         }
-        $query=json_encode($query,JSON_PRETTY_PRINT);
-        $this->write("{$cmd} $query",'query');
-        $this->num_queries++;
+	    if(is_array($query) || is_object($query)) {
+			$query = json_encode($query, JSON_PRETTY_PRINT);
+		}
+        $this->write("{$cmd}\n$query",'query');
+        $this->num_requests++;
 		return $this;
 	}
-	public function getNumQueries(){
-		return $this->num_queries;
+	public function getNumRequests(){
+		return $this->num_requests;
 	}
 	protected function write($line,$file){
 	    if(!$this->enabled || !$this->logDir){
 	        return ;
         }
 	    $time=date('Y-m-d h:i:s');
+	    $trace='';
+	    if($this->withTrace){
+	    	$trace=PHP_EOL.
+				'Trace:'.
+				$this->debugBacktraceSummary(null,1);
+		}
 	    file_put_contents($this->logDir."/$file.log",
-			$time.' '.
-				$line.
-				'. Trace:'.
-			$this->debugBacktraceSummary().PHP_EOL,FILE_APPEND);
+			$time.' '. $line.$trace
+				.PHP_EOL.PHP_EOL,FILE_APPEND);
     }
-    public function enable($flag=true){
-	    $previous= $this->enabled;
-	    $this->enabled=$flag;
-	    return $previous;
-    }
+
 
 	protected function debugBacktraceSummary( $ignore_class = null, $skip_frames = 0, $pretty = true ) {
 		static $truncate_paths;

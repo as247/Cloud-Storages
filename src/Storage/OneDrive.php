@@ -64,6 +64,7 @@ class OneDrive extends Storage
 
 	public function writeStream(string $path, $contents, Config $config): void
 	{
+		$this->getCache()->forget($path);
 		try {
 			$this->service->upload($path, $contents);
 			if ($config && $visibility = $config->get('visibility')) {
@@ -89,6 +90,7 @@ class OneDrive extends Storage
 
 	public function delete(string $path): void
 	{
+		$this->getCache()->forget($path);
 		try {
 			$this->service->delete($path);
 		} catch (ClientException $e) {
@@ -103,6 +105,7 @@ class OneDrive extends Storage
 
 	public function deleteDirectory(string $path): void
 	{
+		$this->getCache()->forget($path);
 		try {
 			$this->delete($path);
 		}catch (UnableToDeleteFile $e){
@@ -132,6 +135,7 @@ class OneDrive extends Storage
 	 */
 	public function setVisibility(string $path, $visibility): void
 	{
+		$this->getCache()->forget($path);
 		if ($visibility === Storage::VISIBILITY_PUBLIC) {
 			$this->service->publish($path);
 		} elseif ($visibility === Storage::VISIBILITY_PRIVATE) {
@@ -150,6 +154,7 @@ class OneDrive extends Storage
 	public function move(string $source, string $destination, Config $config): void
 	{
 		$this->service->move($source, $destination);
+		$this->getCache()->rename($source,$destination);
 	}
 
 	/**
@@ -172,15 +177,27 @@ class OneDrive extends Storage
 	public function getMetadata($path): FileAttributes
 	{
 		try {
-			$meta = $this->service->getItem($path, ['expand' => 'permissions']);
+			if($this->cache->has($path)){
+				$meta=$this->cache->get($path);
+				if(!$meta){
+					throw new FileNotFoundException($path);
+				}
+			}
+			if(!isset($meta)) {
+				$meta = $this->service->getItem($path, ['expand' => 'permissions']);
+				$this->cache->put($path,$meta);
+			}
 			$attributes = $this->service->normalizeMetadata($meta, $path);
 			return FileAttributes::fromArray($attributes);
 		} catch (ClientException $e) {
 			if ($e->getResponse()->getStatusCode() === 404) {
+				$this->cache->put($path,false);
 				throw new FileNotFoundException($path, 0, $e);
 			}
 			throw UnableToRetrieveMetadata::create($path, 'metadata', '', $e);
-		} catch (Throwable $e) {
+		} catch (FileNotFoundException $e){
+			throw $e;
+		}catch (Throwable $e) {
 			throw UnableToRetrieveMetadata::create($path, 'metadata', '', $e);
 		}
 	}

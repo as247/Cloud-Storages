@@ -40,6 +40,9 @@ class UnableToRetrieveMetadata extends OperationException implements FilesystemO
 
 	public static function create(string $location, string $type, string $extraMessage = '', Throwable $previous = null): self
 	{
+		if($previous){
+			$extraMessage.=' '.$previous->getMessage();
+		}
 		$e = new static("Unable to retrieve the $type for file at location: $location. {$extraMessage}", 0, $previous);
 		$e->location = $location;
 		$e->metadataType = $type;

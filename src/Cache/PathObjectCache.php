@@ -13,7 +13,6 @@ class PathObjectCache implements PathCacheInterface
 	protected $files=[];
 	protected $completed=[];
 	protected $length=0;
-	protected $maxCacheLength=500;
 	public function __construct()
 	{
 
@@ -41,7 +40,7 @@ class PathObjectCache implements PathCacheInterface
 	public function forget($key)
 	{
 		$key=Path::clean($key);
-		unset($this->files[$key]);
+		$this->rename($key,null);
 	}
 
 	public function forever($key, $value)
@@ -62,12 +61,17 @@ class PathObjectCache implements PathCacheInterface
 	public function rename($from, $to)
 	{
 		$from=Path::clean($from);
-		$remove=$to===false;
+		$deleted=empty($to);
+		$forget=$to===null;
 		$to=Path::clean($to);
 		foreach ($this->files as $key=>$file){
-			if($remove) {
+			if($deleted) {
 				if(strpos($key,$from)===0){
-					$this->files[$key]=false;
+					if($forget){
+						unset($this->files[$key]);
+					}else {
+						$this->files[$key] = false;
+					}
 				}
 			}else{
 				$newKey = Path::replace($from, $to, $key);
@@ -78,7 +82,7 @@ class PathObjectCache implements PathCacheInterface
 			}
 		}
 		foreach ($this->completed as $key=>$value){
-			if($remove){
+			if($deleted){
 				if(strpos($key,$from)===0){
 					unset($this->completed[$key]);
 				}

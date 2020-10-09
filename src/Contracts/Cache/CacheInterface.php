@@ -6,7 +6,7 @@ namespace As247\CloudStorages\Contracts\Cache;
 
 interface CacheInterface
 {
-	public function put($key, $data, $seconds);
+	public function put($key, $data, $seconds=3600);
 
 	public function get($key);
 

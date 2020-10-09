@@ -74,10 +74,7 @@ class GoogleDrive
 	public function __construct(Google_Service_Drive $service,$options=[])
 	{
 		$this->service=$service;
-		$this->logger=new Logger($options['logging']['dir']??'');
-		if(isset($options['logging']['enable'])){
-            $this->logger->enable($options['logging']['enable']);
-        }
+		$this->setupLogger($options['logging']??'');
 		$this->options = array_replace_recursive(static::$defaultOptions, $options);
 		$this->publishPermission = $this->options['publishPermission'];
 
@@ -259,7 +256,7 @@ class GoogleDrive
 			}
 		}
 		$client->setUseBatch(false);
-		$this->logQuery('files.list.batch',[
+		$this->logRequest('files.list.batch',[
 		    'query'=>'find for '.$name.' in '.$parent,
             'duration'=>microtime(true)-$timerStart]);
 		$list=new Google_Service_Drive_FileList();
@@ -275,7 +272,7 @@ class GoogleDrive
 		$optParams=$this->getParams('files.list',['fields' => $this->fetchFieldsList],$optParams);
 		$result= $this->service->files->listFiles($optParams);
         if(!$this->service->getClient()->shouldDefer()) {
-            $this->logQuery('files.list', [
+            $this->logRequest('files.list', [
                 'query'=>func_get_args(),
                 'duration'=>microtime(true)-$timerStart,
                 ]);
@@ -296,7 +293,7 @@ class GoogleDrive
 
 		$optParams=$this->getParams('files.get',['fields' => $this->fetchFieldsGet],$optParams);
 		$result= $this->service->files->get($fileId,$optParams);
-        $this->logQuery('files.get', [
+        $this->logRequest('files.get', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -312,7 +309,7 @@ class GoogleDrive
 		$timerStart=microtime(true);
 		$optParams=$this->getParams('files.create',['fields' => $this->fetchFieldsGet],$optParams);
 		$result= $this->service->files->create($postBody,$optParams);
-        $this->logQuery('files.create', [
+        $this->logRequest('files.create', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -326,7 +323,7 @@ class GoogleDrive
 		}
 		$optParams=$this->getParams('files.update',['fields' => $this->fetchFieldsGet],$optParams);
 		$result= $this->service->files->update($fileId,$postBody,$optParams);
-        $this->logQuery('files.update', [
+        $this->logRequest('files.update', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -340,7 +337,7 @@ class GoogleDrive
 
 		$optParams=$this->getParams('files.copy',['fields' => $this->fetchFieldsGet],$optParams);
 		$result= $this->service->files->copy($fileId,$postBody,$optParams);
-        $this->logQuery('files.copy', [
+        $this->logRequest('files.copy', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -353,7 +350,7 @@ class GoogleDrive
 		}
 		$optParams=$this->getParams('files.delete',$optParams);
 		$result = $this->service->files->delete($fileId,$optParams);
-        $this->logQuery('files.delete', [
+        $this->logRequest('files.delete', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -373,7 +370,7 @@ class GoogleDrive
 			$stream = $response->getBody()->detach();
 		}
 		$this->service->getClient()->setUseBatch(false);
-        $this->logQuery('files.read', [
+        $this->logRequest('files.read', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -396,7 +393,7 @@ class GoogleDrive
 			$permissions=array_merge($permissions,[$newPermission]);
 			$file->setPermissions($permissions);
 		}
-        $this->logQuery('files.permission.create', [
+        $this->logRequest('files.permission.create', [
             'query'=>$file->getId(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -417,7 +414,7 @@ class GoogleDrive
 			}
 		}
 		$file->setPermissions($permissions);
-        $this->logQuery('files.permission.create', [
+        $this->logRequest('files.permission.create', [
             'query'=>$file->getId(),
             'duration'=>microtime(true)-$timerStart,
         ]);
@@ -469,8 +466,8 @@ class GoogleDrive
 		return $obj;
 	}
 
-	protected function logQuery($cmd,$query){
-		$this->logger->query($cmd,$query);
+	protected function logRequest($cmd, $query){
+		$this->logger->request($cmd,$query);
 	}
 
 
