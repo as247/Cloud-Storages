@@ -6,19 +6,20 @@ namespace As247\CloudStorages\Contracts\Cache;
 
 interface Store
 {
-	public function put($key, $data, $seconds=3600);
+	public function put($path, $data, $seconds=3600);
+	public function forever($path, $value);
+	public function get($path);
+	public function has($path);
 
-	public function get($key);
+	public function forget($path,$bubble = false);
+	public function forgetDir($path);
 
-	public function has($key);
+	public function delete($path, $bubble = false);
+	public function deleteDir($path);
 
-	public function forget($key);
-
-	public function forever($key, $value);
+	public function move($source, $destination);
 
 	public function flush();
-
-	public function rename($source, $destination);
 
 	/**
 	 * Query for matching path
@@ -30,5 +31,5 @@ interface Store
 
 	public function complete($path, $isCompleted = true);
 
-	public function completed($path);
+	public function isCompleted($path);
 }

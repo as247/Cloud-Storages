@@ -19,6 +19,7 @@ use GuzzleHttp\Exception\ClientException;
 use Microsoft\Graph\Exception\GraphException;
 use As247\CloudStorages\Service\OneDrive as OneDriveService;
 use Microsoft\Graph\Graph;
+use SebastianBergmann\CodeCoverage\Report\PHP;
 use Throwable;
 use Traversable;
 
@@ -67,10 +68,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->service->upload($path, $contents);
-			$firstSegment=Path::explode($path)[1]??'';
-			if($firstSegment) {
-				$this->getCache()->forget($firstSegment);
-			}
+			$this->getCache()->forget($path,true);
 			if ($config && $visibility = $config->get('visibility')) {
 				$this->setVisibility($path, $visibility);
 			}
@@ -96,7 +94,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->service->delete($path);
-			$this->getCache()->forget($path);
+			$this->getCache()->delete($path);
 		} catch (ClientException $e) {
 			if ($e->getResponse()->getStatusCode() === 404) {
 				throw FileNotFoundException::create($path);
@@ -111,7 +109,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->delete($path);
-			$this->getCache()->forget($path);
+			$this->getCache()->deleteDir($path);
 		}catch (UnableToDeleteFile $e){
 			throw UnableToDeleteDirectory::atLocation($e->location(),$e->reason(),$e->getPrevious());
 		}
@@ -121,10 +119,8 @@ class OneDrive extends Storage
 	{
 		try {
 			$response = $this->service->createDirectory($path);
-			$firstSegment=Path::explode($path)[1]??'';
-			if($firstSegment) {
-				$this->getCache()->forget($firstSegment);
-			}
+			$this->getCache()->forget($path,true);
+
 			$file = FileAttributes::fromArray($this->service->normalizeMetadata($response, $path));
 			if (!$file->isDir()) {
 				throw UnableToCreateDirectory::atLocation($path, 'File already exists');
@@ -163,7 +159,7 @@ class OneDrive extends Storage
 	public function move(string $source, string $destination, Config $config): void
 	{
 		$this->service->move($source, $destination);
-		$this->getCache()->rename($source,$destination);
+		$this->getCache()->move($source,$destination);
 	}
 
 	/**
@@ -175,7 +171,7 @@ class OneDrive extends Storage
 	public function copy(string $source, string $destination, Config $config): void
 	{
 		$this->service->copy($source, $destination);
-		$this->getCache()->forget($destination);
+		$this->getCache()->forget($destination,true);
 	}
 
 
@@ -189,6 +185,7 @@ class OneDrive extends Storage
 		try {
 			//echo PHP_EOL.'metadata: '.$path.PHP_EOL;
 			if($this->cache->has($path)){
+				//echo 'From Cache: '.$path.PHP_EOL;
 				$meta=$this->cache->get($path);
 				if(!$meta){
 					throw new FileNotFoundException($path);

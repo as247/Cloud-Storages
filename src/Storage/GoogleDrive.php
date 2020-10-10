@@ -43,8 +43,6 @@ class GoogleDrive extends Storage
 	protected $service;
 
 	protected $root;//Root id
-
-	protected $cache;
 	protected $maxFolderLevel = 128;
 
 	public function __construct(Google_Service_Drive $service, $options)
@@ -110,7 +108,7 @@ class GoogleDrive extends Storage
 
 				$created = $this->service->dirCreate($name, $parent);
 				$this->cache->put($currentPaths, $created);
-				$this->cache->completed($currentPaths);
+				$this->cache->complete($currentPaths);
 				$parent = $created->getId();
 			}
 		}
@@ -145,7 +143,7 @@ class GoogleDrive extends Storage
 			throw UnableToDeleteDirectory::atLocation($path, "Root directory cannot be deleted");
 		}
 		$this->service->filesDelete($file);
-		$this->cache->put($path, false);
+		$this->getCache()->delete($path);
 		$this->logger->log("Deleted $path");
 	}
 
@@ -165,7 +163,7 @@ class GoogleDrive extends Storage
 			throw UnableToDeleteDirectory::atLocation($path, "Root directory cannot be deleted");
 		}
 		$this->service->filesDelete($file);
-		$this->cache->rename($path, false);
+		$this->cache->deleteDir($path);
 		$this->logger->log("Deleted $path");
 	}
 
@@ -282,7 +280,7 @@ class GoogleDrive extends Storage
 		if(!in_array($newParentId,$result->getParents())){
 			throw UnableToMoveFile::fromLocationTo($fromPath, $toPath,'Service update failure');
 		}
-		$this->cache->rename($fromPath, $toPath);
+		$this->cache->move($fromPath, $toPath);
 		$this->logger->log("Moved file: $fromPath -> $toPath");
 	}
 
@@ -371,7 +369,7 @@ class GoogleDrive extends Storage
 
 	protected function fetchDirectory($directory, $pageSize = 1000)
 	{
-		if ($this->cache->completed($directory)) {
+		if ($this->cache->isCompleted($directory)) {
 			foreach ($this->cache->query($directory) as $path => $file) {
 				if ($file instanceof Google_Service_Drive_DriveFile) {
 					yield $file->getId() => $this->service->normalizeMetadata($file, $path);
