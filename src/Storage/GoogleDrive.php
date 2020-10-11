@@ -119,7 +119,7 @@ class GoogleDrive extends Storage
 	/**
 	 * @inheritDoc
 	 */
-	public function writeStream(string $path, $contents, Config $config): void
+	public function writeStream(string $path, $contents, Config $config = null): void
 	{
 		$this->upload($path, $contents, $config);
 	}
@@ -193,11 +193,11 @@ class GoogleDrive extends Storage
 
 	}
 
-	public function createDirectory(string $path, Config $config): void
+	public function createDirectory(string $path, Config $config = null): void
 	{
 		$this->ensureDirectory(Path::clean($path));
 		$result = $this->getMetadata($path);
-		if ($visibility = $config->get('visibility')) {
+		if ($config && $visibility = $config->get('visibility')) {
 			$this->setVisibility($path, $visibility);
 			$result['visibility'] = $visibility;
 		}

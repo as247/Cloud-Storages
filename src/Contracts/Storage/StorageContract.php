@@ -40,14 +40,15 @@ interface StorageContract
 	 * @return mixed | GoogleDrive | OneDrive
 	 */
 	public function getService();
+
 	/**
 	 * @param string $path
-	 * @param resource|StreamInterface $contents
-	 * @param Config $config
+	 * @param resource|StreamInterface|mixed $contents
+	 * @param Config|null $config
 	 * @throws UnableToWriteFile
 	 * @throws FilesystemException
 	 */
-	public function writeStream(string $path, $contents, Config $config): void;
+	public function writeStream(string $path, $contents, Config $config=null): void;
 
 	/**
 	 * @param string $path
@@ -75,11 +76,11 @@ interface StorageContract
 
 	/**
 	 * @param string $path
-	 * @param Config $config
+	 * @param Config|null $config
 	 * @throws UnableToCreateDirectory
 	 * @throws FilesystemException
 	 */
-	public function createDirectory(string $path, Config $config): void;
+	public function createDirectory(string $path, Config $config=null): void;
 
 	/**
 	 * @param string $path
@@ -100,20 +101,20 @@ interface StorageContract
 	/**
 	 * @param string $source
 	 * @param string $destination
-	 * @param Config $config
+	 * @param Config|null $config
 	 * @throws UnableToMoveFile
 	 * @throws FilesystemException
 	 */
-	public function move(string $source, string $destination, Config $config): void;
+	public function move(string $source, string $destination, Config $config=null): void;
 
 	/**
 	 * @param string $source
 	 * @param string $destination
-	 * @param Config $config
+	 * @param Config|null $config
 	 * @throws UnableToCopyFile
 	 * @throws FilesystemException
 	 */
-	public function copy(string $source, string $destination, Config $config): void;
+	public function copy(string $source, string $destination, Config $config=null): void;
 
 	/**
 	 * @param $path

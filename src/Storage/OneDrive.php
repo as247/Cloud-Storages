@@ -13,13 +13,11 @@ use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
 use As247\CloudStorages\Exception\UnableToWriteFile;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
-use As247\CloudStorages\Support\Path;
 use Generator;
 use GuzzleHttp\Exception\ClientException;
 use Microsoft\Graph\Exception\GraphException;
 use As247\CloudStorages\Service\OneDrive as OneDriveService;
 use Microsoft\Graph\Graph;
-use SebastianBergmann\CodeCoverage\Report\PHP;
 use Throwable;
 use Traversable;
 
@@ -64,7 +62,7 @@ class OneDrive extends Storage
 		}
 	}
 
-	public function writeStream(string $path, $contents, Config $config): void
+	public function writeStream(string $path, $contents, Config $config = null): void
 	{
 		try {
 			$this->service->upload($path, $contents);
@@ -115,7 +113,7 @@ class OneDrive extends Storage
 		}
 	}
 
-	public function createDirectory(string $path, Config $config): void
+	public function createDirectory(string $path, Config $config = null): void
 	{
 		try {
 			$response = $this->service->createDirectory($path);
@@ -153,10 +151,10 @@ class OneDrive extends Storage
 	/**
 	 * @param string $source
 	 * @param string $destination
-	 * @param Config $config
+	 * @param Config|null $config
 	 * @throws GraphException
 	 */
-	public function move(string $source, string $destination, Config $config): void
+	public function move(string $source, string $destination, Config $config = null): void
 	{
 		$this->service->move($source, $destination);
 		$this->getCache()->move($source,$destination);
@@ -165,10 +163,10 @@ class OneDrive extends Storage
 	/**
 	 * @param string $source
 	 * @param string $destination
-	 * @param Config $config
+	 * @param Config|null $config
 	 * @throws GraphException
 	 */
-	public function copy(string $source, string $destination, Config $config): void
+	public function copy(string $source, string $destination, Config $config = null): void
 	{
 		$this->service->copy($source, $destination);
 		$this->getCache()->forget($destination,true);
