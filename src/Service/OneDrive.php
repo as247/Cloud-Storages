@@ -37,6 +37,7 @@ class OneDrive
 	{
 		$permissions=$response['permissions']??[];
 		$visibility = StorageContract::VISIBILITY_PRIVATE;
+		$shareLink=null;
 		foreach ($permissions as $permission) {
 			if(!isset($permission['link']['scope']) || !isset($permission['roles'])){
 				continue;
@@ -44,6 +45,7 @@ class OneDrive
 			if(in_array($this->publishPermission['role'],$permission['roles'])
 				&& $permission['link']['scope']==$this->publishPermission['scope']){
 				$visibility = StorageContract::VISIBILITY_PUBLIC;
+				$shareLink=$permission['link']['webUrl']??null;
 				break;
 			}
 		}
@@ -57,6 +59,7 @@ class OneDrive
 			StorageAttributes::ATTRIBUTE_VISIBILITY=>$visibility,
 			'@id'=>$response['id']??null,
 			'@link' => $response['webUrl'] ?? null,
+			'@shareLink'=>$shareLink,
 			'@downloadUrl' => $response['@microsoft.graph.downloadUrl']?? null,
 		];
 	}

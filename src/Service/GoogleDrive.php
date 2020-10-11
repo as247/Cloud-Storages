@@ -111,25 +111,24 @@ class GoogleDrive
 	{
 		$id = $object->getId();
 		$result = [
-			'id'=>$id,
-			'name' => $object->getName(),
 			StorageAttributes::ATTRIBUTE_PATH => is_string($path)? ltrim($path,'\/'):null,
 			StorageAttributes::ATTRIBUTE_TYPE => $object->mimeType === self::DIRMIME ? StorageAttributes::TYPE_DIRECTORY : StorageAttributes::TYPE_FILE,
 			StorageAttributes::ATTRIBUTE_LAST_MODIFIED=>strtotime($object->getModifiedTime())
 		];
 		$result[StorageAttributes::ATTRIBUTE_MIME_TYPE] = $object->getMimeType();
 		$result[StorageAttributes::ATTRIBUTE_FILE_SIZE] = (int) $object->getSize();
-
 		$result[StorageAttributes::ATTRIBUTE_VISIBILITY]=$this->getVisibility($object);
-
 		// attach additional fields
 		if ($this->additionalFields) {
 			foreach($this->additionalFields as $field) {
 				if (property_exists($object, $field)) {
-					$result[$field] = $object->$field;
+					$result['@'.$field] = $object->$field;
 				}
 			}
 		}
+		$result['@id']=$id;
+		$result['@shareLink']=$result['@link']=$object->getWebViewLink();
+		$result['@downloadUrl']=$object->getWebContentLink();
 		return $result;
 	}
 	protected function getVisibility(Google_Service_Drive_DriveFile $object){

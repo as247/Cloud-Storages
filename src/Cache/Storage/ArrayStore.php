@@ -23,10 +23,10 @@ class ArrayStore implements Store
 		$this->files[$key] = $value;
 	}
 
-	public function get($key)
+	public function get($key, $default=null)
 	{
 		$key = Path::clean($key);
-		return $this->files[$key] ?? null;
+		return $this->files[$key] ?? $default;
 	}
 
 	public function has($key)

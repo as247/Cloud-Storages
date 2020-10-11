@@ -43,8 +43,8 @@ class FileStore implements Store
 		}
 
 	}
-	function get($key){
-		return $this->getPayload($key)['data'] ?? null;
+	function get($key, $default=null){
+		return $this->getPayload($key)['data'] ?? $default;
 	}
 	function put($key,$value,$expires=3600){
 		$path=$this->getCacheFile($key);
@@ -60,7 +60,7 @@ class FileStore implements Store
 	{
 		return !empty($this->getPayload($key));
 	}
-	public function forget($key)
+	public function forget($key, $bubble=false)
 	{
 		$path=$this->getCacheFile($key);
 		if(is_dir($dir=$this->getCacheFile($key,''))){
@@ -79,23 +79,6 @@ class FileStore implements Store
 		$this->rrmdir($this->cacheDir);
 	}
 
-	function rename($source, $destination)
-	{
-		if(empty($destination)){
-			$this->forget($source);
-		}
-		$cacheDir=$this->getCacheFile($source,'');
-		$newCacheDir=$this->getCacheFile($destination,'');
-		$cacheFile=$this->getCacheFile($source);
-		$newCacheFile=$this->getCacheFile($destination);
-		if($cacheFile){//Source is file
-			$this->forget(dirname($destination));//Clear desination folder info
-		}
-		$this->renameCacheFile($cacheDir,$newCacheDir);
-		$this->renameCacheFile($cacheFile,$newCacheFile);
-
-
-	}
 	protected function renameCacheFile($cacheFile,$newCacheFile){
 		if (file_exists($cacheFile)) {
 			$this->mkdirp(dirname($newCacheFile));
@@ -189,4 +172,36 @@ class FileStore implements Store
 		return mkdir($dir, 0750, true);
 	}
 
+	public function forgetDir($path)
+	{
+		// TODO: Implement forgetDir() method.
+	}
+
+	public function delete($path, $bubble = false)
+	{
+		// TODO: Implement delete() method.
+	}
+
+	public function deleteDir($path)
+	{
+		// TODO: Implement deleteDir() method.
+	}
+
+	public function move($source, $destination)
+	{
+		$cacheDir=$this->getCacheFile($source,'');
+		$newCacheDir=$this->getCacheFile($destination,'');
+		$cacheFile=$this->getCacheFile($source);
+		$newCacheFile=$this->getCacheFile($destination);
+		if($cacheFile){//Source is file
+			$this->forget(dirname($destination));//Clear desination folder info
+		}
+		$this->renameCacheFile($cacheDir,$newCacheDir);
+		$this->renameCacheFile($cacheFile,$newCacheFile);
+	}
+
+	public function isCompleted($path)
+	{
+		// TODO: Implement isCompleted() method.
+	}
 }
