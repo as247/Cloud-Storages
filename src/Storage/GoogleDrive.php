@@ -71,14 +71,11 @@ class GoogleDrive extends Storage
 	{
 		$root = $options['root'];
 		$this->root = $root;
-		$options['cache']=new PathCache(new GoogleDriveStore($root));
+		$options['cache']=new PathCache(new GoogleDriveStore());
 		$this->setupCache($options);
 	}
 	protected function initializeCacheRoot(){
-		$dRoot = new Google_Service_Drive_DriveFile();
-		$dRoot->setId($this->root);
-		$dRoot->setMimeType($this->service::DIR_MIME);
-		$this->cache->forever('/', $dRoot);
+		$this->cache->getStore()->mapDirectory('/', $this->root);
 	}
 
 	/**
