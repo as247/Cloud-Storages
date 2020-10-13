@@ -5,6 +5,7 @@ namespace As247\CloudStorages\Cache;
 
 
 use As247\CloudStorages\Cache\Storage\ArrayStore;
+use As247\CloudStorages\Cache\Storage\GoogleDriveStore;
 use As247\CloudStorages\Contracts\Cache\Store;
 
 
@@ -15,14 +16,24 @@ use As247\CloudStorages\Contracts\Cache\Store;
  */
 class PathCache
 {
-	protected $storage;
-	public function __construct()
+	protected $store;
+	public function __construct(Store $store=null)
 	{
-		$this->storage = new ArrayStore();
+		if($store==null) {
+			$store=new ArrayStore();
+		}
+		$this->store = $store;
+	}
+
+	/**
+	 * @return ArrayStore|GoogleDriveStore|Store|null
+	 */
+	public function getStore(){
+		return $this->store;
 	}
 
 	public function __call($name, $arguments)
 	{
-		return $this->storage->$name(...$arguments);
+		return $this->store->$name(...$arguments);
 	}
 }

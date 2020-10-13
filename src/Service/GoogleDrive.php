@@ -22,7 +22,7 @@ class GoogleDrive
 	 *
 	 * @var string
 	 */
-	const DIRMIME = 'application/vnd.google-apps.folder';
+	const DIR_MIME = 'application/vnd.google-apps.folder';
 
 	/**
 	 * Default options
@@ -112,7 +112,7 @@ class GoogleDrive
 		$id = $object->getId();
 		$result = [
 			StorageAttributes::ATTRIBUTE_PATH => is_string($path)? ltrim($path,'\/'):null,
-			StorageAttributes::ATTRIBUTE_TYPE => $object->mimeType === self::DIRMIME ? StorageAttributes::TYPE_DIRECTORY : StorageAttributes::TYPE_FILE,
+			StorageAttributes::ATTRIBUTE_TYPE => $object->mimeType === self::DIR_MIME ? StorageAttributes::TYPE_DIRECTORY : StorageAttributes::TYPE_FILE,
 			StorageAttributes::ATTRIBUTE_LAST_MODIFIED=>strtotime($object->getModifiedTime())
 		];
 		$result[StorageAttributes::ATTRIBUTE_MIME_TYPE] = $object->getMimeType();
@@ -198,7 +198,7 @@ class GoogleDrive
 		$file->setParents([
 			$parentId
 		]);
-		$file->setMimeType(self::DIRMIME);
+		$file->setMimeType(self::DIR_MIME);
 		return $this->filesCreate($file);
 	}
 	/**
@@ -219,7 +219,7 @@ class GoogleDrive
 		$q='trashed = false and "%s" in parents and name = "%s"';
 		$args = [
 			'pageSize' => 2,
-			'q' =>sprintf($q,$parent,$name,static::DIRMIME),
+			'q' =>sprintf($q,$parent,$name,static::DIR_MIME),
 		];
 		$filesMatchedName=$this->filesListFiles($args);
 		$q='trashed = false and "%s" in parents';
@@ -228,7 +228,7 @@ class GoogleDrive
 		}
 		$args = [
 			'pageSize' => 50,
-			'q' =>sprintf($q,$parent,$name,static::DIRMIME),
+			'q' =>sprintf($q,$parent,$name,static::DIR_MIME),
 		];
 		$otherFiles=$this->filesListFiles($args);
 		$batch->add($filesMatchedName,'matched');

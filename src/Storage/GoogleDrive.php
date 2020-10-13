@@ -3,6 +3,8 @@
 
 namespace As247\CloudStorages\Storage;
 
+use As247\CloudStorages\Cache\PathCache;
+use As247\CloudStorages\Cache\Storage\GoogleDriveStore;
 use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\InvalidStreamProvided;
 use As247\CloudStorages\Exception\InvalidVisibilityProvided;
@@ -29,14 +31,6 @@ use Traversable;
 
 class GoogleDrive extends Storage
 {
-	/**
-	 * MIME type of directory
-	 *
-	 * @var string
-	 */
-	const DIR_MIME = 'application/vnd.google-apps.folder';
-
-
 	/**
 	 * Google_Service_Drive instance
 	 */
@@ -70,12 +64,13 @@ class GoogleDrive extends Storage
 	{
 		$root = $options['root'];
 		$this->root = $root;
+		$options['cache']=new PathCache(new GoogleDriveStore($root));
 		$this->setupCache($options);
 	}
 	protected function initializeCacheRoot(){
 		$dRoot = new Google_Service_Drive_DriveFile();
 		$dRoot->setId($this->root);
-		$dRoot->setMimeType(static::DIR_MIME);
+		$dRoot->setMimeType($this->service::DIR_MIME);
 		$this->cache->forever('/', $dRoot);
 	}
 

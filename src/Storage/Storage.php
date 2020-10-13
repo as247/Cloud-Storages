@@ -16,16 +16,14 @@ abstract class Storage implements StorageContract
 	protected $cache;
 	use HasLogger;
 	protected function setupCache($options){
-		if(!isset($options['cache'])){
-			$options['cache']=new PathCache();
+		$cache=$options['cache']??null;
+		if($cache instanceof Closure){
+			$cache=$cache();
 		}
-		if($options['cache'] instanceof Closure){
-			$options['cache']=$options['cache']();
+		if(!$cache instanceof PathCache){
+			$cache=new PathCache();
 		}
-		if(!$options['cache'] instanceof PathCache){
-			$options['cache']=new PathCache();
-		}
-		$this->setCache($options['cache']);
+		$this->setCache($cache);
 	}
 	public function setCache(PathCache $cache){
 		$this->cache=$cache;
