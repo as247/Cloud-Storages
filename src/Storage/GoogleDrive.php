@@ -44,6 +44,13 @@ class GoogleDrive extends Storage
 		if (is_string($options)) {
 			$options = ['root' => $options];
 		}
+		if(isset($options['teamDrive'])){
+			if($options['teamDrive']===true){
+				$options['teamDrive']=$options['root'];//Team drive same as root if boolean
+			}elseif(empty($options['root']) && is_string($options['teamDrive'])){
+				$options['root']=$options['teamDrive'];
+			}
+		}
 		$this->service = new GoogleDriveService($service, $options);
 		$this->setLogger($this->service->getLogger());
 		$this->setRoot($options);
