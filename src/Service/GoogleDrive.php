@@ -30,9 +30,6 @@ class GoogleDrive
 	 * @var array
 	 */
 	protected static $defaultOptions = [
-		'root'=>'',
-		'spaces' => 'drive',
-		'useHasDir' => false,
 		'additionalFetchField' => '',
 		'publishPermission' => [
 			'type' => 'anyone',
@@ -56,6 +53,7 @@ class GoogleDrive
 			],
 		],
 		'teamDrive' => false,
+		'useTrash' => true,
 	];
 	protected $options;
 
@@ -348,7 +346,13 @@ class GoogleDrive
 			$fileId=$fileId->getId();
 		}
 		$optParams=$this->getParams('files.delete',$optParams);
-		$result = $this->service->files->delete($fileId,$optParams);
+		if($this->options['useTrash']){
+			$fileUpdate=new Google_Service_Drive_DriveFile();
+			$fileUpdate->setTrashed(true);
+			$result=$this->service->files->update($fileId,$fileUpdate,$optParams);
+		}else {
+			$result = $this->service->files->delete($fileId, $optParams);
+		}
         $this->logRequest('files.delete', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
