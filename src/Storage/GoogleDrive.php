@@ -26,7 +26,9 @@ use Google_Service_Drive;
 use Google_Service_Drive_DriveFile;
 use As247\CloudStorages\Service\GoogleDrive as GoogleDriveService;
 use Google_Service_Drive_FileList;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7;
+use InvalidArgumentException;
 use Traversable;
 
 class GoogleDrive extends Storage
@@ -295,9 +297,10 @@ class GoogleDrive extends Storage
 	 */
 	protected function upload(string $path, $contents, Config $config = null)
 	{
-		$contents = Psr7\stream_for($contents);
-		if (!$contents || !$contents->getSize()) {
-			throw new InvalidStreamProvided("Resource is empty");
+		try {
+			$contents = Psr7\stream_for($contents);
+		}catch (InvalidArgumentException $e){
+			throw new InvalidStreamProvided("Invalid contents. ".$e->getMessage());
 		}
 		$contents->rewind();
 		if ($this->isDirectory($path)) {
@@ -460,7 +463,11 @@ class GoogleDrive extends Storage
 		if (!$this->isFile($path)) {
 			throw UnableToReadFile::fromLocation($path, "File not found");
 		}
-		return $this->service->filesRead($file);
+		try {
+			return $this->service->filesRead($file);
+		} catch (GuzzleException $e) {
+			throw UnableToReadFile::fromLocation($path, $e->getMessage(), $e);
+		}
 	}
 
 
@@ -608,6 +615,6 @@ class GoogleDrive extends Storage
 			}
 			throw UnableToRetrieveMetadata::create($path, 'metadata');
 		}
-		throw FileNotFoundException::create($path);
+		throw FileNotFoundException::create(Path::clean($path));
 	}
 }

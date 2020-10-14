@@ -34,7 +34,7 @@ class Config
 	 *
 	 * @return mixed config setting or default when not found
 	 */
-	public function get($key, $default = null)
+	public function get(string $key, $default = null)
 	{
 		if ( ! array_key_exists($key, $this->settings)) {
 			return $this->getDefault($key, $default);
@@ -50,7 +50,7 @@ class Config
 	 *
 	 * @return bool
 	 */
-	public function has($key)
+	public function has(string $key)
 	{
 		if (array_key_exists($key, $this->settings)) {
 			return true;
@@ -69,7 +69,7 @@ class Config
 	 *
 	 * @return mixed config setting or default when not found
 	 */
-	protected function getDefault($key, $default)
+	protected function getDefault(string $key, $default)
 	{
 		if ( ! $this->fallback) {
 			return $default;
@@ -86,7 +86,7 @@ class Config
 	 *
 	 * @return $this
 	 */
-	public function set($key, $value)
+	public function set(string $key, $value)
 	{
 		$this->settings[$key] = $value;
 

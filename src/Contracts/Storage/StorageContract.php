@@ -20,7 +20,6 @@ use As247\CloudStorages\Support\FileAttributes;
 use As247\CloudStorages\Support\StorageAttributes;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Exception\FilesystemException;
-use Psr\Http\Message\StreamInterface;
 use Traversable;
 
 interface StorageContract
@@ -43,7 +42,7 @@ interface StorageContract
 
 	/**
 	 * @param string $path
-	 * @param resource|StreamInterface|mixed $contents
+	 * @param $contents
 	 * @param Config|null $config
 	 * @throws UnableToWriteFile
 	 * @throws FilesystemException

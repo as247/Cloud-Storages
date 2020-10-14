@@ -4,6 +4,8 @@
 namespace As247\CloudStorages\Exception;
 
 
+use Throwable;
+
 class UnreadableFileEncountered extends OperationException implements FilesystemOperationFailed
 {
 
@@ -17,7 +19,7 @@ class UnreadableFileEncountered extends OperationException implements Filesystem
 		return $this->location;
 	}
 
-	public static function atLocation(string $location, \Throwable $previous=null, $code= 0): UnreadableFileEncountered
+	public static function atLocation(string $location, Throwable $previous=null, $code= 0): UnreadableFileEncountered
 	{
 		$e = new static("Unreadable file encountered at location {$location}.", $code, $previous);
 		$e->location = $location;

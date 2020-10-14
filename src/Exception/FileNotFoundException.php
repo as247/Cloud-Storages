@@ -16,17 +16,13 @@ class FileNotFoundException extends Exception implements FilesystemException
 	/**
 	 * Constructor.
 	 *
-	 * @param string     $path
-	 * @param int        $code
-	 * @param \Exception $previous
+	 * @param string $path
+	 * @param int $code
+	 * @param Throwable|null $previous
 	 */
-	public function __construct($path, $code = 0, Throwable $previous = null)
+	public function __construct(string $path, $code = 0, Throwable $previous = null)
 	{
-		if(!is_string($path)){
-			$path=json_encode($path);
-		}
 		$this->path = $path;
-
 		parent::__construct('File not found at path: ' . $this->getPath(), $code, $previous);
 	}
 

@@ -11,8 +11,10 @@ use As247\CloudStorages\Support\StorageAttributes;
 use Generator;
 use GuzzleHttp\Psr7\Stream;
 use As247\CloudStorages\Contracts\Storage\StorageContract;
+use InvalidArgumentException;
 use Microsoft\Graph\Exception\GraphException;
 use Microsoft\Graph\Graph;
+use Microsoft\Graph\Http\GraphRequest;
 use function GuzzleHttp\Psr7\stream_for;
 
 class OneDrive
@@ -237,15 +239,13 @@ class OneDrive
 	 */
 	public function upload($path,$contents){
 		$endpoint = $this->getEndpoint($path,'content');
-
-		if (is_resource($contents)) {
-			$stats = fstat($contents);
-			if (empty($stats['size'])) {
-				throw new InvalidStreamProvided('Empty stream');
-			}
+		try {
+			$stream = stream_for($contents);
+		}catch (InvalidArgumentException $e){
+			throw new InvalidStreamProvided("Invalid contents. ".$e->getMessage());
 		}
+
 		$this->createDirectory(dirname($path));
-		$stream = stream_for($contents);
 
 		return $this->createRequest('PUT', $endpoint)
 				->attachBody($stream)
@@ -296,6 +296,13 @@ class OneDrive
 		$endpoint=$this->getEndpoint($path,'permissions/'.$idToRemove);
 		$this->createRequest('DELETE', $endpoint)->execute();
 	}
+
+	/**
+	 * @param $requestType
+	 * @param $endpoint
+	 * @return GraphRequest
+	 * @throws GraphException
+	 */
 	protected function createRequest($requestType, $endpoint){
 		$this->logger->request($requestType,$endpoint);
 		return $this->graph->createRequest($requestType,$endpoint);

@@ -6,6 +6,7 @@ namespace As247\CloudStorages\Controllers;
 
 use As247\CloudStorages\Support\OneDriveOauth;
 use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 
 class OneDriveController
 {
@@ -23,6 +24,8 @@ class OneDriveController
 				$result=$this->oauth->fetchAccessTokenWithAuthCode($code);
 				$refreshToken=$result['refresh_token'];
 			}catch (Exception $e){
+				$refreshToken=$e->getMessage();
+			} catch (GuzzleException $e) {
 				$refreshToken=$e->getMessage();
 			}
 			$this->showRefreshToken($refreshToken);

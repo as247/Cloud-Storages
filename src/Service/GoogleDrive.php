@@ -8,6 +8,7 @@ use As247\CloudStorages\Support\StorageAttributes;
 use Google_Http_MediaFileUpload;
 use Google_Service_Drive;
 use Google_Service_Drive_Permission;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Stream;
 use As247\CloudStorages\Contracts\Storage\StorageContract;
 use Psr\Http\Message\RequestInterface;
@@ -18,7 +19,7 @@ use Psr\Http\Message\StreamInterface;
 class GoogleDrive
 {
 	/**
-	 * MIME tyoe of directory
+	 * MIME type of directory
 	 *
 	 * @var string
 	 */
@@ -360,6 +361,11 @@ class GoogleDrive
         return $result;
 	}
 
+	/**
+	 * @param $fileId
+	 * @return resource|null
+	 * @throws GuzzleException
+	 */
 	public function filesRead($fileId){
         $timerStart=microtime(true);
 		if($fileId instanceof Google_Service_Drive_DriveFile){
@@ -382,6 +388,7 @@ class GoogleDrive
 
 	/**
 	 * Publish file
+	 * @param Google_Service_Drive_DriveFile $file
 	 */
 	public function publish(Google_Service_Drive_DriveFile $file)
 	{
@@ -404,6 +411,7 @@ class GoogleDrive
 
 	/**
 	 * Un-publish specified path item
+	 * @param Google_Service_Drive_DriveFile $file
 	 */
 	public function unPublish(Google_Service_Drive_DriveFile $file)
 	{

@@ -11,6 +11,7 @@ namespace As247\CloudStorages\Support;
 use As247\CloudStorages\Cache\TempCache;
 use As247\CloudStorages\Contracts\Cache\Store;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 
 class OneDriveOauth
@@ -52,6 +53,11 @@ class OneDriveOauth
 		return 'http://' . $_SERVER['HTTP_HOST'];
 	}
 
+	/**
+	 * @param $code
+	 * @return mixed
+	 * @throws GuzzleException
+	 */
 	public function fetchAccessTokenWithAuthCode($code)
 	{
 		$postKey = 'form_params';
@@ -73,8 +79,9 @@ class OneDriveOauth
 	/**
 	 * Fetch new access token or return existing one
 	 * @param int $minLifetime If token life time smaller this value then it will fetch new token
-	 * 			eg. current token expires in 50 sec, but we need 60, then it fetch new token
+	 *            eg. current token expires in 50 sec, but we need 60, then it fetch new token
 	 * @return mixed
+	 * @throws GuzzleException
 	 */
 	function getAccessToken($minLifetime = 600)
 	{
@@ -104,6 +111,11 @@ class OneDriveOauth
 
 	}
 
+	/**
+	 * @param string $refresh_token
+	 * @return mixed
+	 * @throws GuzzleException
+	 */
 	function fetchAccessTokenWithRefreshToken($refresh_token = '')
 	{
 		$refresh_token = $refresh_token ?: $this->refreshToken;
@@ -125,7 +137,7 @@ class OneDriveOauth
 	/**
 	 * Get a instance of the Guzzle HTTP client.
 	 *
-	 * @return \GuzzleHttp\Client
+	 * @return Client
 	 */
 	protected function getHttpClient()
 	{

@@ -2,6 +2,8 @@
 
 
 namespace As247\CloudStorages\Cache;
+use RuntimeException;
+
 class TempCache
 {
 	protected $cacheDir;
@@ -35,17 +37,18 @@ class TempCache
 			@$created=mkdir($this->cacheDir, 0777, true);
 		}
 		if(!$created){
-			throw new \RuntimeException('Could not create directory '.$this->cacheDir);
+			throw new RuntimeException('Could not create directory '.$this->cacheDir);
 		}
 		return $created;
 	}
+
 	/**
 	 * Retrieve an item and expiry time from the cache by key.
 	 *
-	 * @param  string  $key
+	 * @param string $key
 	 * @return array
 	 */
-	protected function getPayload($key)
+	protected function getPayload(string $key)
 	{
 		$path = $this->path($key);
 		$payload=[];

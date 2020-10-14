@@ -95,14 +95,14 @@ class Path
         return $parts;
     }
 
-    /**
-     * Removes unprintable characters and invalid unicode characters.
-     *
-     * @param string $path
-     *
-     * @return string $path
-     */
-    protected static function removeFunkyWhiteSpace($path)
+	/**
+	 * Removes unprintable characters and invalid unicode characters.
+	 *
+	 * @param string $path
+	 *
+	 * @return string $path
+	 */
+    protected static function removeFunkyWhiteSpace(string $path)
     {
         // We do this check in a loop, since removing invalid unicode characters
         // can lead to new characters being created.

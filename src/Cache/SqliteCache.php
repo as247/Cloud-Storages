@@ -3,11 +3,18 @@
 
 namespace As247\CloudStorages\Cache;
 
+use Exception;
 use PDO;
 
 class SqliteCache
 {
 	protected $pdo;
+
+	/**
+	 * SqliteCache constructor.
+	 * @param null $dataFile
+	 * @throws Exception
+	 */
 	public function __construct($dataFile=null)
 	{
 		if($dataFile===null){
@@ -21,11 +28,15 @@ class SqliteCache
 			$this->checkMalformed();
 		}
 	}
+
+	/**
+	 * @throws Exception
+	 */
 	protected function checkMalformed(){
 		$this->pdo->prepare("select 1 from cache where 0=1");
 		$error = $this->pdo->errorInfo();
 		if($error[0] !=='00000'){
-			throw new \Exception(sprintf("SQLSTATE[%s]: Error [%s] %s",$error[0],$error[1],$error[2]));
+			throw new Exception(sprintf("SQLSTATE[%s]: Error [%s] %s",$error[0],$error[1],$error[2]));
 		}
 	}
 	protected function createPathMapTable(){
