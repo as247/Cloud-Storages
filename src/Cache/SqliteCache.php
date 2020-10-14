@@ -3,6 +3,8 @@
 
 namespace As247\CloudStorages\Cache;
 
+use PDO;
+
 class SqliteCache
 {
 	protected $pdo;
@@ -12,7 +14,7 @@ class SqliteCache
 			$dataFile=sys_get_temp_dir().'/'.md5(static::class).'';
 		}
 		$isNewDB=!file_exists($dataFile);
-		$this->pdo=new \PDO('sqlite:' . $dataFile);
+		$this->pdo=new PDO('sqlite:' . $dataFile);
 		if($isNewDB) {
 			$this->createPathMapTable();
 		}else{
@@ -40,7 +42,7 @@ class SqliteCache
 		$statement=$this->pdo->prepare("SELECT * FROM cache WHERE key=? limit 1");
 		$statement->bindValue(1,$key);
 		$statement->execute();
-		$cache=$statement->fetch(\PDO::FETCH_OBJ);
+		$cache=$statement->fetch(PDO::FETCH_OBJ);
 		if(!$cache){
 			return null;
 		}

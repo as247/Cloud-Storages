@@ -5,6 +5,7 @@ namespace As247\CloudStorages\Cache\Storage;
 
 use As247\CloudStorages\Contracts\Cache\Store;
 use As247\CloudStorages\Support\Path;
+use RuntimeException;
 
 class ArrayStore implements Store
 {
@@ -105,7 +106,7 @@ class ArrayStore implements Store
 	function move($from,$to)
 	{
 		if(!$from || !$to){
-			throw new \RuntimeException("Invalid path");
+			throw new RuntimeException("Invalid path $from -> $to");
 		}
 		$from=Path::clean($from);
 		$to=Path::clean($to);
