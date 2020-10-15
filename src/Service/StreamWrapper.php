@@ -18,7 +18,6 @@ use function GuzzleHttp\Psr7\stream_for;
  */
 class StreamWrapper implements StreamInterface
 {
-	protected $readMinLength;
 	protected $psr7Stream;
 	public function __construct($stream, $options = [])
 	{
@@ -91,7 +90,11 @@ class StreamWrapper implements StreamInterface
 
 	public function read($length)
 	{
-		return $this->psr7Stream->read($length);
+		$bytes=$this->psr7Stream->read($length);
+		while(strlen($bytes)<$length && !$this->eof()){
+			$bytes.=$this->psr7Stream->read($length);
+		}
+		return $bytes;
 	}
 
 	public function getContents()
