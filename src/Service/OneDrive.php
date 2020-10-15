@@ -3,19 +3,17 @@
 
 namespace As247\CloudStorages\Service;
 
-
 use ArrayObject;
+use As247\CloudStorages\Exception\InvalidPathException;
 use As247\CloudStorages\Exception\InvalidStreamProvided;
 use As247\CloudStorages\Support\Path;
 use As247\CloudStorages\Support\StorageAttributes;
 use Generator;
-use GuzzleHttp\Psr7\Stream;
 use As247\CloudStorages\Contracts\Storage\StorageContract;
 use InvalidArgumentException;
 use Microsoft\Graph\Exception\GraphException;
 use Microsoft\Graph\Graph;
 use Microsoft\Graph\Http\GraphRequest;
-use function GuzzleHttp\Psr7\stream_for;
 
 class OneDrive
 {
@@ -66,6 +64,7 @@ class OneDrive
 		];
 	}
 	function getEndpoint($path='',$action='',$params=[]){
+		$this->validatePath($path);
 		$path=Path::clean($path);
 		$path=trim($path,'\\/');
 		$path=static::ROOT.':/'.$path;
@@ -167,7 +166,7 @@ class OneDrive
 		$endpoint=$this->getEndpoint($path,'content',$args);
 		$response=$this->createRequest('GET',$endpoint)->setReturnType('GuzzleHttp\Psr7\Stream')->execute();
 		/**
-		 * @var Stream $response
+		 * @var StreamWrapper $response
 		 */
 		return $response->detach();
 
@@ -240,7 +239,7 @@ class OneDrive
 	public function upload($path,$contents){
 		$endpoint = $this->getEndpoint($path,'content');
 		try {
-			$stream = stream_for($contents);
+			$stream = StreamWrapper::wrap($contents);
 		}catch (InvalidArgumentException $e){
 			throw new InvalidStreamProvided("Invalid contents. ".$e->getMessage());
 		}
@@ -306,5 +305,13 @@ class OneDrive
 	protected function createRequest($requestType, $endpoint){
 		$this->logger->request($requestType,$endpoint);
 		return $this->graph->createRequest($requestType,$endpoint);
+	}
+	protected function validatePath($path){
+		$invalidChars=['"','*',':','<','>','?', '|'];
+		foreach ($invalidChars as $char){
+			if(strpos($path,$char)!==false){
+				throw InvalidPathException::atLocation($path,$invalidChars);
+			}
+		}
 	}
 }

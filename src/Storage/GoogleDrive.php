@@ -17,6 +17,7 @@ use As247\CloudStorages\Exception\UnableToReadFile;
 use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
 use As247\CloudStorages\Exception\UnableToSetVisibility;
 use As247\CloudStorages\Exception\UnableToWriteFile;
+use As247\CloudStorages\Service\StreamWrapper;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
 use As247\CloudStorages\Support\Path;
@@ -27,7 +28,6 @@ use Google_Service_Drive_DriveFile;
 use As247\CloudStorages\Service\GoogleDrive as GoogleDriveService;
 use Google_Service_Drive_FileList;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7;
 use InvalidArgumentException;
 use Traversable;
 
@@ -298,7 +298,7 @@ class GoogleDrive extends Storage
 	protected function upload(string $path, $contents, Config $config = null)
 	{
 		try {
-			$contents = Psr7\stream_for($contents);
+			$contents = StreamWrapper::wrap($contents);
 		}catch (InvalidArgumentException $e){
 			throw new InvalidStreamProvided("Invalid contents. ".$e->getMessage());
 		}
