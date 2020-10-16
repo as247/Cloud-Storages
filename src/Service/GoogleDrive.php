@@ -5,6 +5,7 @@ namespace As247\CloudStorages\Service;
 
 use As247\CloudStorages\Exception\ApiException;
 use As247\CloudStorages\Support\StorageAttributes;
+use Google\Auth\HttpHandler\HttpHandlerFactory;
 use Google_Http_MediaFileUpload;
 use Google_Service_Drive;
 use Google_Service_Drive_Permission;
@@ -372,13 +373,17 @@ class GoogleDrive
 			$fileId=$fileId->getId();
 		}
 		$this->service->getClient()->setUseBatch(true);
+		$request=$this->filesGet($fileId, ['alt' => 'media']);
+		$this->service->getClient()->setUseBatch(false);
 		$stream=null;
 		$client=$this->service->getClient()->authorize();
-		$response = $client->send($this->filesGet($fileId, ['alt' => 'media']), ['stream' => true]);
+		$handler=HttpHandlerFactory::build($client);
+		$response = $handler($request,['stream'=>true]);
+
 		if ($response->getBody() instanceof Stream) {
 			$stream = $response->getBody()->detach();
 		}
-		$this->service->getClient()->setUseBatch(false);
+
         $this->logRequest('files.read', [
             'query'=>func_get_args(),
             'duration'=>microtime(true)-$timerStart,
