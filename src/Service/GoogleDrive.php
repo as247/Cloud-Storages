@@ -5,6 +5,7 @@ namespace As247\CloudStorages\Service;
 
 use As247\CloudStorages\Exception\ApiException;
 use As247\CloudStorages\Support\StorageAttributes;
+use Google\Auth\HttpHandler\Guzzle5HttpHandler;
 use Google\Auth\HttpHandler\HttpHandlerFactory;
 use Google_Http_MediaFileUpload;
 use Google_Service_Drive;
@@ -378,10 +379,16 @@ class GoogleDrive
 		$stream=null;
 		$client=$this->service->getClient()->authorize();
 		$handler=HttpHandlerFactory::build($client);
-		$response = $handler($request,['stream'=>true]);
+		if($handler instanceof Guzzle5HttpHandler){
+			//Handler v5 still working but stream read all to buffer
+			//We use native method to read
+			$stream=$this->fileReadNative($request);
 
-		if ($response->getBody() instanceof Stream) {
-			$stream = $response->getBody()->detach();
+		}else {
+			$response = $handler($request, ['stream' => true]);
+			if ($response->getBody() instanceof Stream) {
+				$stream = $response->getBody()->detach();
+			}
 		}
 
         $this->logRequest('files.read', [
@@ -389,6 +396,23 @@ class GoogleDrive
             'duration'=>microtime(true)-$timerStart,
         ]);
 		return $stream;
+	}
+
+	protected function fileReadNative(RequestInterface $request){
+		$token=$this->service->getClient()->getAccessToken();
+		$token=$token['access_token'];
+		$url=$request->getUri()->__toString();
+		$auth = "Authorization: Bearer $token";
+		$opts = array (
+			'http' => array (
+				'method' => "GET",
+				'header' => $auth,
+				'user_agent' => 'as247/cloud-storages',
+			)
+		);
+		$context = stream_context_create($opts);
+		$fp = fopen($url, 'rb', false, $context);
+		return $fp;
 	}
 
 	/**
