@@ -144,7 +144,7 @@ class GoogleDrive extends Storage
 			throw UnableToDeleteDirectory::atLocation($path, "Root directory cannot be deleted");
 		}
 		$this->service->filesDelete($file);
-		$this->getCache()->delete($path);
+		$this->cache->delete($path);
 		$this->logger->log("Deleted $path");
 	}
 

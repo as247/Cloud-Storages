@@ -3,9 +3,8 @@
 
 namespace As247\CloudStorages\Service;
 
-use GuzzleHttp\Psr7\PumpStream;
-use Psr\Http\Message\StreamInterface;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Stream;
+use GuzzleHttp\Psr7\Utils;
 
 
 /**
@@ -16,12 +15,12 @@ use function GuzzleHttp\Psr7\stream_for;
  * Class Stream
  * @package As247\CloudStorages\Service
  */
-class StreamWrapper implements StreamInterface
+class StreamWrapper extends Stream
 {
 	protected $psr7Stream;
 	public function __construct($stream, $options = [])
 	{
-		$this->psr7Stream=stream_for($stream,$options);
+		$this->psr7Stream=Utils::streamFor($stream,$options);
 	}
 	public static function wrap($stream,$options=[]){
 		return new static($stream,$options);

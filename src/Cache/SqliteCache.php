@@ -23,7 +23,7 @@ class SqliteCache
 		$isNewDB=!file_exists($dataFile);
 		$this->pdo=new PDO('sqlite:' . $dataFile);
 		if($isNewDB) {
-			$this->createPathMapTable();
+			$this->createTable();
 		}else{
 			$this->checkMalformed();
 		}
@@ -39,7 +39,7 @@ class SqliteCache
 			throw new Exception(sprintf("SQLSTATE[%s]: Error [%s] %s",$error[0],$error[1],$error[2]));
 		}
 	}
-	protected function createPathMapTable(){
+	protected function createTable(){
 		$this->pdo->query("
 			CREATE TABLE IF NOT EXISTS `cache` (
 				`key` varchar(190) not null,

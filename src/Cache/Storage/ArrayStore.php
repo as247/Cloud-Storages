@@ -3,11 +3,11 @@
 
 namespace As247\CloudStorages\Cache\Storage;
 
-use As247\CloudStorages\Contracts\Cache\Store;
+use As247\CloudStorages\Contracts\Cache\PathStore;
 use As247\CloudStorages\Support\Path;
 use RuntimeException;
 
-class ArrayStore implements Store
+class ArrayStore implements PathStore
 {
 	protected $files = [];
 	protected $completed = [];
@@ -20,8 +20,7 @@ class ArrayStore implements Store
 
 	public function forever($key, $value)
 	{
-		$key = Path::clean($key);
-		$this->files[$key] = $value;
+		$this->put($key,$value,315360000);
 	}
 
 	public function get($key, $default=null)
@@ -36,64 +35,22 @@ class ArrayStore implements Store
 		return array_key_exists($key, $this->files);
 	}
 
-	public function forget($path, $bubble = false)
+	public function forget($path)
 	{
 		$path=Path::clean($path);
-		if ($bubble) {
-			$tmpPath = $path;
-			do  {
+		unset($this->files[$path]);
+		unset($this->completed[$path]);
+	}
+	public function forgetBranch($path)
+	{
+		$tmpPath = Path::clean($path);
+		do  {
+			if(empty($this->files[$tmpPath]))
 				unset($this->files[$tmpPath]);
-				unset($this->completed[$tmpPath]);
-			}while(($tmpPath = Path::clean(dirname($tmpPath))) && $tmpPath !== '/');
-		} else {
-			unset($this->files[$path]);
-			unset($this->completed[$path]);
-		}
+			unset($this->completed[$tmpPath]);
+		}while(($tmpPath = Path::clean(dirname($tmpPath))) && $tmpPath !== '/');
 	}
 
-	public function delete($path, $bubble = false)
-	{
-		$path=Path::clean($path);
-		if ($bubble) {
-			$tmpPath = $path;
-			do{
-				$this->files[$tmpPath] = false;
-			}
-			while (($tmpPath = Path::clean(dirname($tmpPath))) && $tmpPath !== '/');
-		} else {
-			$this->files[$path] = false;
-		}
-	}
-
-	public function forgetDir($path)
-	{
-		$path=Path::clean($path);
-		foreach ($this->files as $key => $file) {
-			if (strpos($key, $path) === 0) {
-				unset($this->files[$key]);
-			}
-		}
-		foreach ($this->completed as $key => $value) {
-			if (strpos($key, $path) === 0) {
-				unset($this->completed[$key]);
-			}
-		}
-	}
-
-	public function deleteDir($path)
-	{
-		$path=Path::clean($path);
-		foreach ($this->files as $key => $file) {
-			if (strpos($key, $path) === 0) {
-				$this->files[$key] = false;
-			}
-		}
-		foreach ($this->completed as $key => $value) {
-			if (strpos($key, $path) === 0) {
-				unset($this->completed[$key]);
-			}
-		}
-	}
 
 	public function flush()
 	{
@@ -103,6 +60,46 @@ class ArrayStore implements Store
 		$this->completed = [];
 	}
 
+	public function delete($path)
+	{
+		$this->put($path,false);
+	}
+	public function deleteBranch($path)
+	{
+		$tmpPath = Path::clean($path);
+		do{
+			$this->put($tmpPath, false);
+		}
+		while (($tmpPath = Path::clean(dirname($tmpPath))) && $tmpPath !== '/');
+	}
+
+	public function forgetDir($path)
+	{
+		$path=Path::clean($path);
+		foreach ($this->query($path,0) as $key => $file) {
+			$this->forget($key);
+		}
+		foreach ($this->completed as $key => $value) {
+			if (strpos($key, $path) === 0) {
+				$this->complete($key,false);
+			}
+		}
+	}
+
+	public function deleteDir($path)
+	{
+		$path=Path::clean($path);
+		foreach ($this->files as $key => $file) {
+			if (strpos($key, $path) === 0) {
+				$this->put($key, false);
+			}
+		}
+		foreach ($this->completed as $key => $value) {
+			if (strpos($key, $path) === 0) {
+				$this->complete($key,false);
+			}
+		}
+	}
 	function move($from,$to)
 	{
 		if(!$from || !$to){
@@ -111,44 +108,38 @@ class ArrayStore implements Store
 		$from=Path::clean($from);
 		$to=Path::clean($to);
 		//Destination tree changed we should clean up all parent
-		$this->forget($to,true);
-		foreach ($this->files as $key => $file) {
-			$newKey = Path::replace($from, $to, $key);
-			if ($newKey !== $key) {
-				$this->files[$newKey] = $file;
-				$this->files[$key] = false;
+		//This need for onedrive because we not keep track of parents in cache
+		$this->forgetBranch($to);
+		foreach ($this->query($from,0) as $path => $file ){
+			$newPath=Path::replace($from, $to, $path);
+			if($path!==$newPath){
+				$this->put($newPath,$file);
+				$this->put($path,false);
 			}
 		}
+
 		foreach ($this->completed as $key => $value) {
 			$newKey = Path::replace($from, $to, $key);
 			if ($newKey !== $key) {
-				$this->completed[$newKey] = $value;
-				unset($this->completed[$key]);
+				$this->complete($newKey,$value);
+				$this->complete($key,false);
 			}
 		}
 	}
 
-	public function query($path, $match = '*')
+	public function query($path, $deep = 1)
 	{
 		$directory = Path::clean($path);
 		$results = [];
 		$dirSegCount = Path::countSegments($directory);
-		$deep = 0;
-		if ($match === '*') {
-			$deep = 1;
-		}
-		if (is_int($match)) {
-			$deep = $match;
-		}
 		foreach ($this->files as $path => $file) {
-			if (!$file) {
-				continue;
-			}
-			if (strpos($path, $directory) === 0 && $path !== $directory) {
-				if ($deep) {
-					if (Path::countSegments($path) - $dirSegCount <= $deep) {
+			if (strpos($path, $directory) === 0) {
+				if ($deep>0) {
+					if ($path!==$directory && (Path::countSegments($path) - $dirSegCount <= $deep)) {
 						$results[$path] = $file;
 					}
+				}else{
+					$results[$path] = $file;
 				}
 			}
 		}
@@ -158,7 +149,11 @@ class ArrayStore implements Store
 	public function complete($path, $isCompleted = true)
 	{
 		$path = Path::clean($path);
-		$this->completed[$path] = $isCompleted;
+		if($isCompleted) {
+			$this->completed[$path] = $isCompleted;
+		}else{
+			unset($this->completed[$path]);
+		}
 	}
 
 	public function isCompleted($path)

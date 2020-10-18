@@ -66,7 +66,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->service->upload($path, $contents);
-			$this->getCache()->forget($path,true);
+			$this->cache->forgetBranch($path);
 			if ($config && $visibility = $config->get('visibility')) {
 				$this->setVisibility($path, $visibility);
 			}
@@ -92,7 +92,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->service->delete($path);
-			$this->getCache()->delete($path);
+			$this->cache->delete($path);
 		} catch (ClientException $e) {
 			if ($e->getResponse()->getStatusCode() === 404) {
 				throw FileNotFoundException::create($path);
@@ -107,7 +107,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$this->delete($path);
-			$this->getCache()->deleteDir($path);
+			$this->cache->deleteDir($path);
 		}catch (UnableToDeleteFile $e){
 			throw UnableToDeleteDirectory::atLocation($e->location(),$e->reason(),$e->getPrevious());
 		}
@@ -117,7 +117,7 @@ class OneDrive extends Storage
 	{
 		try {
 			$response = $this->service->createDirectory($path);
-			$this->getCache()->forget($path,true);
+			$this->cache->forgetBranch($path);
 
 			$file = FileAttributes::fromArray($this->service->normalizeMetadata($response, $path));
 			if (!$file->isDir()) {
@@ -139,10 +139,10 @@ class OneDrive extends Storage
 	{
 		if ($visibility === Storage::VISIBILITY_PUBLIC) {
 			$this->service->publish($path);
-			$this->getCache()->forget($path);
+			$this->cache->forget($path);
 		} elseif ($visibility === Storage::VISIBILITY_PRIVATE) {
 			$this->service->unPublish($path);
-			$this->getCache()->forget($path);
+			$this->cache->forget($path);
 		} else {
 			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [Storage::VISIBILITY_PUBLIC, Storage::VISIBILITY_PRIVATE]));
 		}
@@ -157,7 +157,7 @@ class OneDrive extends Storage
 	public function move(string $source, string $destination, Config $config = null): void
 	{
 		$this->service->move($source, $destination);
-		$this->getCache()->move($source,$destination);
+		$this->cache->move($source,$destination);
 	}
 
 	/**
@@ -169,7 +169,7 @@ class OneDrive extends Storage
 	public function copy(string $source, string $destination, Config $config = null): void
 	{
 		$this->service->copy($source, $destination);
-		$this->getCache()->forget($destination,true);
+		$this->cache->forgetBranch($destination);
 	}
 
 
