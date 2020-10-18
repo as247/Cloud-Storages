@@ -4,6 +4,7 @@
 namespace As247\CloudStorages\Storage;
 
 use As247\CloudStorages\Cache\PathCache;
+use As247\CloudStorages\Cache\Storage\GoogleDrivePersistentStore;
 use As247\CloudStorages\Cache\Storage\GoogleDriveStore;
 use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\InvalidStreamProvided;
@@ -73,7 +74,11 @@ class GoogleDrive extends Storage
 	{
 		$root = $options['root'];
 		$this->root = $root;
-		$options['cache']=new PathCache(new GoogleDriveStore());
+		if(is_string($options['cache'])){
+			$options['cache'] = new PathCache(new GoogleDrivePersistentStore($options['cache']));
+		}else {
+			$options['cache'] = new PathCache(new GoogleDriveStore());
+		}
 		$this->setupCache($options);
 	}
 	protected function initializeCacheRoot(){
@@ -108,6 +113,7 @@ class GoogleDrive extends Storage
 				}
 
 				$created = $this->service->dirCreate($name, $parent);
+				//echo 'Created: '.print_r($currentPaths);
 				$this->cache->put($currentPaths, $created);
 				$this->cache->complete($currentPaths);
 				$parent = $created->getId();

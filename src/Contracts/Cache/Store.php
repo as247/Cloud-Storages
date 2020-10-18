@@ -26,10 +26,9 @@ interface Store
 	/**
 	 * Get or return default
 	 * @param $path
-	 * @param null $default
 	 * @return mixed
 	 */
-	public function get($path, $default=null);
+	public function get($path);
 
 	/**
 	 * Check if given path exists in cache
