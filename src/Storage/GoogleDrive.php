@@ -4,8 +4,8 @@
 namespace As247\CloudStorages\Storage;
 
 use As247\CloudStorages\Cache\PathCache;
-use As247\CloudStorages\Cache\Storage\GoogleDrivePersistentStore;
-use As247\CloudStorages\Cache\Storage\GoogleDriveStore;
+use As247\CloudStorages\Cache\Stores\GoogleDrivePersistentStore;
+use As247\CloudStorages\Cache\Stores\GoogleDriveStore;
 use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\InvalidStreamProvided;
 use As247\CloudStorages\Exception\InvalidVisibilityProvided;
@@ -74,12 +74,15 @@ class GoogleDrive extends Storage
 	{
 		$root = $options['root'];
 		$this->root = $root;
-		if(is_string($options['cache'])){
+		if(isset($options['cache']) && is_string($options['cache'])){
 			$options['cache'] = new PathCache(new GoogleDrivePersistentStore($options['cache']));
 		}else {
 			$options['cache'] = new PathCache(new GoogleDriveStore());
 		}
 		$this->setupCache($options);
+	}
+	public function getRoot(){
+		return $this->root;
 	}
 	protected function initializeCacheRoot(){
 		$this->cache->getStore()->mapDirectory('/', $this->root);
@@ -377,6 +380,7 @@ class GoogleDrive extends Storage
 
 	protected function fetchDirectory($directory, $pageSize = 1000)
 	{
+		//echo 'Fetching: '.$directory;
 		if ($this->cache->isCompleted($directory)) {
 			foreach ($this->cache->query($directory) as $path => $file) {
 				if ($file instanceof Google_Service_Drive_DriveFile) {

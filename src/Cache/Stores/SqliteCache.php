@@ -1,7 +1,7 @@
 <?php
 
 
-namespace As247\CloudStorages\Cache;
+namespace As247\CloudStorages\Cache\Stores;
 
 use Exception;
 use PDO;
@@ -42,10 +42,17 @@ class SqliteCache
 	protected function createTable(){
 		$this->pdo->query("
 			CREATE TABLE IF NOT EXISTS `cache` (
-				`key` varchar(190) not null,
+				`key` varchar(500) not null,
 				`value` text not null,
 				`expiration` integer(11),
 				PRIMARY KEY (`key`)
+			)
+		");
+		$this->pdo->query("
+			CREATE TABLE IF NOT EXISTS `completed` (
+				`path` varchar(500) not null,
+				`expiration` integer(11),
+				PRIMARY KEY (`path`)
 			)
 		");
 	}
@@ -104,24 +111,107 @@ class SqliteCache
 	{
 		return $this->put($path, $value, -1);
 	}
+	public function getCompleted($key=''){
+		if($key) {
+			$statement = $this->pdo->prepare("SELECT * FROM completed WHERE path like ?");
+			$statement->bindValue(1, $key . '%');
+		}else{
+			$statement = $this->pdo->prepare("SELECT * FROM completed");
+		}
+		$statement->execute();
+		$allRecords=$statement->fetchAll(PDO::FETCH_OBJ);
+		if(!$allRecords){
+			return [];
+		}
+		$results=[];
+		foreach ($allRecords as $cache) {
+			if ($this->currentTime() >= $cache->expiration) {
+				$this->forget($key);
+			}else{
+				$results[$cache->path]=true;
+			}
+		}
+		return $results;
+	}
+	public function isCompleted($key){
+		$statement=$this->pdo->prepare("SELECT * FROM completed WHERE path=? limit 1");
+		$statement->bindValue(1,$key);
+		$statement->execute();
+		$cache=$statement->fetch(PDO::FETCH_OBJ);
+		if(!$cache){
+			return false;
+		}
+		if ($this->currentTime() >= $cache->expiration) {
+			$this->complete($key,false);
+			return false;
+		}
+		return true;
+	}
+	public function complete($key, $completed=true, $seconds=3600){
+		if($completed){
+			$statement=$this->pdo->prepare(
+				"insert into completed (`path`,`expiration`) values (?,?)"
+			);
+			if($seconds===-1){
+				$expire=2147483647;
+			}else{
+				$expire=$this->currentTime()+$seconds;
+			}
+			$statement->bindValue(1,$key);
+			$statement->bindValue(2,$expire);
+			if(!$statement->execute()){
+				$statement=$this->pdo->prepare("UPDATE completed SET expiration=:expiration  WHERE path=:key");
+				$statement->bindValue(':key',$key);
+				$statement->bindValue(':expiration',$expire);
+				return $statement->execute();
+			}else{
+				return true;
+			}
+		}else{
+			return $this->forgetComplete($key);
+		}
+	}
+	protected function forgetComplete($key){
+		$key.='%';
+		$statement=$this->pdo->prepare("DELETE FROM completed WHERE path like ?");
+		$statement->bindValue(1,$key);
+		return $statement->execute();
+	}
 
 	public function flush(){
 		$statement=$this->pdo->prepare("DELETE FROM cache");
 		$statement->execute();
 		return true;
 	}
+
 	public function clearExpires(){
-		$statement=$this->pdo->prepare("DELETE FROM cache WHERE expiration < ?");
-		$statement->bindValue(1,$this->currentTime());
-		$statement->execute();
+		$statement1=$this->pdo->prepare("DELETE FROM cache WHERE expiration < ?");
+		$statement2=$this->pdo->prepare("DELETE FROM completed WHERE expiration < ?");
+		$statement1->bindValue(1,$this->currentTime());
+		$statement2->bindValue(1,$this->currentTime());
+		$statement1->execute();
+		$statement2->execute();
 	}
 	public function getPdo(){
 		return $this->pdo;
 	}
-	public function keyStartedWith($key){
-		$statement=$this->pdo->prepare("SELECT * FROM cache WHERE key like ?");
-		$key=$key.'%';
-		$statement->bindValue(1,$key);
+	public function pathQuery($key, $deep=1){
+		$like=$key.'%';
+		$notLike='';
+		if($deep>0){
+			$notLike=$like;
+			while($deep-->0){
+				$notLike.='/%';
+			}
+		}
+		if($notLike){
+			$statement=$this->pdo->prepare("SELECT * FROM cache WHERE key like ? and key not like ?");
+			$statement->bindValue(2,$notLike);
+		}else{
+			$statement=$this->pdo->prepare("SELECT * FROM cache WHERE key like ?");
+		}
+		$statement->bindValue(1,$like);
+		//$statement->bindValue(2,$notLike);
 		$statement->execute();
 		$allRecords=$statement->fetchAll(PDO::FETCH_OBJ);
 		if(!$allRecords){

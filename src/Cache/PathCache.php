@@ -4,8 +4,8 @@
 namespace As247\CloudStorages\Cache;
 
 
-use As247\CloudStorages\Cache\Storage\ArrayStore;
-use As247\CloudStorages\Cache\Storage\GoogleDriveStore;
+use As247\CloudStorages\Cache\Stores\ArrayStore;
+use As247\CloudStorages\Cache\Stores\GoogleDriveStore;
 use As247\CloudStorages\Contracts\Cache\PathStore;
 
 
@@ -13,6 +13,8 @@ use As247\CloudStorages\Contracts\Cache\PathStore;
  * Class PathCache
  * @package As247\CloudStorages\Cache
  * @mixin PathStore
+ * @mixin GoogleDriveStore
+ * @mixin ArrayStore
  */
 class PathCache
 {

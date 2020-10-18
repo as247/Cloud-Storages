@@ -1,7 +1,7 @@
 <?php
 
 
-namespace As247\CloudStorages\Cache\Storage;
+namespace As247\CloudStorages\Cache\Stores;
 
 use As247\CloudStorages\Contracts\Cache\PathStore;
 use As247\CloudStorages\Support\Path;
@@ -40,7 +40,7 @@ class ArrayStore implements PathStore
 		$key = Path::clean($key);
 		if($data===null){
 			unset($this->files[$key]);
-			$this->completed($key,false);
+			$this->complete($key,false);
 		}else {
 			$this->files[$key] = $data;
 		}
@@ -105,11 +105,7 @@ class ArrayStore implements PathStore
 		foreach ($this->query($path,0) as $key => $file) {
 			$this->forget($key);
 		}
-		foreach ($this->getCompleted() as $key => $value) {
-			if (strpos($key, $path) === 0) {
-				$this->complete($key,false);
-			}
-		}
+		$this->complete($path,false);
 	}
 
 	public function deleteDir($path)
@@ -118,11 +114,8 @@ class ArrayStore implements PathStore
 		foreach ($this->query($path,0) as $key => $file) {
 			$this->put($key, false);
 		}
-		foreach ($this->getCompleted() as $key => $value) {
-			if (strpos($key, $path) === 0) {
-				$this->complete($key,false);
-			}
-		}
+		$this->complete($path,false);
+
 	}
 	function move($from,$to)
 	{
@@ -142,7 +135,7 @@ class ArrayStore implements PathStore
 			}
 		}
 
-		foreach ($this->getCompleted() as $key => $value) {
+		foreach ($this->getCompleted($from) as $key => $value) {
 			$newKey = Path::replace($from, $to, $key);
 			if ($newKey !== $key) {
 				$this->complete($newKey,$value);
@@ -151,17 +144,21 @@ class ArrayStore implements PathStore
 		}
 	}
 
-	public function getCompleted(){
+	public function getCompleted($path){
 		return $this->completed;
 	}
-
 	public function complete($path, $isCompleted = true)
 	{
 		$path = Path::clean($path);
 		if($isCompleted) {
 			$this->completed[$path] = $isCompleted;
 		}else{
-			unset($this->completed[$path]);
+			$path=Path::clean($path);
+			foreach ($this->getCompleted($path) as $key => $value) {
+				if (strpos($key, $path) === 0) {
+					unset($this->completed[$key]);
+				}
+			}
 		}
 	}
 

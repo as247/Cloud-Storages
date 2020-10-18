@@ -74,4 +74,6 @@ interface PathStore extends Store
 	 * @return mixed
 	 */
 	public function isCompleted($path);
+
+	public function getCompleted($path);
 }
