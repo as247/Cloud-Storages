@@ -31,13 +31,6 @@ interface Store
 	public function get($path);
 
 	/**
-	 * Check if given path exists in cache
-	 * @param $path
-	 * @return mixed
-	 */
-	public function has($path);
-
-	/**
 	 * For get a path
 	 * @param $path
 	 * @return mixed

@@ -64,14 +64,6 @@ class ArrayStore implements PathStore
 		$this->put($key,$value,315360000);
 	}
 
-
-
-	public function has($key)
-	{
-		return $this->get($key)!==null;
-	}
-
-
 	public function forgetBranch($path)
 	{
 		$tmpPath = Path::clean($path);

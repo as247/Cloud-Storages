@@ -5,6 +5,7 @@ namespace As247\CloudStorages\Storage;
 
 
 use As247\CloudStorages\Cache\Stores\GoogleDrivePersistentStore;
+use As247\CloudStorages\Cache\Stores\NullStore;
 use As247\CloudStorages\Cache\Stores\SqliteCache;
 use As247\CloudStorages\Contracts\Storage\ObjectStorage;
 use As247\CloudStorages\Exception\FileNotFoundException;
@@ -16,11 +17,17 @@ class GoogleDriveObjectStorage implements ObjectStorage
 	protected $storage;
 	protected $objCache;
 	protected $storageCache;
-	public function __construct(GoogleDrive $drive)
+	public function __construct(GoogleDrive $drive,$cacheFilePath=null)
 	{
 		$this->storage=$drive;
-		$dataFile=__DIR__.'/'.$drive->getRoot().'.sqlite';
-		$this->objCache=new SqliteCache($dataFile);
+		if($cacheFilePath===null) {
+			$cacheFilePath = sys_get_temp_dir() . '/' . $drive->getRoot() . '.sqlite';
+		}
+		if($cacheFilePath) {
+			$this->objCache = new SqliteCache($cacheFilePath);
+		}else{
+			$this->objCache = new NullStore();
+		}
 		$this->storageCache=$drive->getCache();
 		if($this->storageCache->getStore() instanceof GoogleDrivePersistentStore){
 			throw new ObjectStorageException('Persistent cache not work with object storage');

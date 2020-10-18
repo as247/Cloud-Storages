@@ -196,8 +196,8 @@ class GoogleDrive extends Storage
 			//C not exists mean file.txt also not exists
 			return false;
 		}
-		if ($this->cache->has($path)) {
-			return $this->cache->get($path);
+		if (null!==($cached=$this->cache->get($path))) {
+			return $cached;
 		}
 		return false;
 
@@ -516,15 +516,15 @@ class GoogleDrive extends Storage
 		$paths = $this->parsePath($path);
 		$this->logger->log("Path finding: " . join(', ',$paths));
 		$currentPaths = [];
-		if(!$this->cache->has('/')) {
+		if($this->cache->get('/')===null) {
 			$this->initializeCacheRoot();
 		}
 		$parent = $this->cache->get('/');
 		while (null !== ($name = array_shift($paths))) {
 			$parentPaths = $currentPaths;
 			$currentPaths[] = $name;
-			if ($this->cache->has($currentPaths)) {
-				$foundDir = $this->cache->get($currentPaths);
+			$foundDir = $this->cache->get($currentPaths);
+			if (!is_null($foundDir)) {
 				if ($foundDir && $this->isDirectory($foundDir)) {
 					$parent = $foundDir;
 					continue;

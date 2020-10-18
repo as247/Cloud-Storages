@@ -3,10 +3,11 @@
 
 namespace As247\CloudStorages\Cache\Stores;
 
+use As247\CloudStorages\Contracts\Cache\Store;
 use Exception;
 use PDO;
 
-class SqliteCache
+class SqliteCache implements Store
 {
 	protected $pdo;
 
@@ -71,7 +72,7 @@ class SqliteCache
 		return unserialize($cache->value);
 	}
 
-	public function put(string $key, $value, $seconds=3600){
+	public function put($key, $value, $seconds=3600){
 		$value=serialize($value);
 		$statement=$this->pdo->prepare(
 		"insert into cache (`key`,`value`,`expiration`) values (?,?,?)"
@@ -107,7 +108,7 @@ class SqliteCache
 	 * @param  mixed  $id
 	 * @return bool
 	 */
-	public function forever(string $path, $value)
+	public function forever($path, $value)
 	{
 		return $this->put($path, $value, -1);
 	}

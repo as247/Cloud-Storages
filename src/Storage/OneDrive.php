@@ -181,13 +181,9 @@ class OneDrive extends Storage
 	public function getMetadata($path): FileAttributes
 	{
 		try {
-			//echo PHP_EOL.'metadata: '.$path.PHP_EOL;
-			if($this->cache->has($path)){
-				//echo 'From Cache: '.$path.PHP_EOL;
-				$meta=$this->cache->get($path);
-				if(!$meta){
-					throw new FileNotFoundException($path);
-				}
+			$meta=$this->cache->get($path);
+			if(!is_null($meta) && !$meta){
+				throw new FileNotFoundException($path);
 			}
 			if(!isset($meta)) {
 				$meta = $this->service->getItem($path, ['expand' => 'permissions']);
