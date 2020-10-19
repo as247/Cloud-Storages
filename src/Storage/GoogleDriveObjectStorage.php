@@ -15,7 +15,7 @@ use As247\CloudStorages\Exception\ObjectStorageException;
 class GoogleDriveObjectStorage implements ObjectStorage
 {
 	protected $storage;
-	protected $objCache;
+	protected $cache;
 	protected $storageCache;
 	public function __construct(GoogleDrive $drive,$cacheFilePath=null)
 	{
@@ -24,9 +24,9 @@ class GoogleDriveObjectStorage implements ObjectStorage
 			$cacheFilePath = sys_get_temp_dir() . '/' . $drive->getRoot() . '.sqlite';
 		}
 		if($cacheFilePath) {
-			$this->objCache = new SqliteCache($cacheFilePath);
+			$this->cache = new SqliteCache($cacheFilePath);
 		}else{
-			$this->objCache = new NullStore();
+			$this->cache = new NullStore();
 		}
 		$this->storageCache=$drive->getCache();
 		if($this->storageCache->getStore() instanceof GoogleDrivePersistentStore){
@@ -37,19 +37,18 @@ class GoogleDriveObjectStorage implements ObjectStorage
 	public function readObject($urn)
 	{
 		$urn=$this->sanitizeUrn($urn);
-		$this->updateCache($urn);
+		$this->mapCache($urn);
 		return $this->storage->readStream($urn);
 	}
 
 	public function writeObject($urn, $stream)
 	{
 		$urn=$this->sanitizeUrn($urn);
-		$this->storageCache->mapFile($urn,$this->objCache->get($urn));
-		print_r($this->storageCache->query('/'));
+		$this->mapCache($urn);
 		try {
 			$this->storage->writeStream($urn, $stream);
 		} catch (FilesystemException $e) {
-			$this->objCache->forget($urn);
+			$this->cache->forget($urn);
 			throw $e;
 		}
 		//File write success update cache
@@ -59,13 +58,13 @@ class GoogleDriveObjectStorage implements ObjectStorage
 	public function deleteObject($urn)
 	{
 		$urn=$this->sanitizeUrn($urn);
-		$this->storageCache->mapFile($urn,$this->objCache->get($urn));
+		$this->mapCache($urn);
 		try {
 			$this->storage->delete($urn);
 		} catch (FileNotFoundException $e) {
 			//Already deleted do nothing
 		} finally {
-			$this->objCache->forget($urn);
+			$this->cache->forget($urn);
 		}
 	}
 
@@ -79,17 +78,19 @@ class GoogleDriveObjectStorage implements ObjectStorage
 			return false;
 		}
 	}
-	protected function updateCache($urn){
-		$cached=$this->objCache->get($urn);
-		if($cached) {
-			$this->storageCache->mapFile($urn, $cached);
+	protected function mapCache($urn){
+		$cached=$this->cache->get($urn);
+		if($cached){
+			$this->storageCache->mapFile($urn,$cached);
 		}
+	}
+	protected function updateCache($urn){
 		try {
 			$meta=$this->storage->getMetadata($urn);
-			$this->objCache->put($urn,$meta['@id']);
+			$this->cache->put($urn,$meta['@id']);
 			return true;
 		} catch (FileNotFoundException $e) {
-			$this->objCache->forget($urn);
+			$this->cache->forget($urn);
 			throw $e;
 		}
 	}
