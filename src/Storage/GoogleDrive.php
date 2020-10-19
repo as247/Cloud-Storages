@@ -471,7 +471,7 @@ class GoogleDrive extends Storage
 	{
 		$file = $this->find($path);
 		if (!$this->isFile($path)) {
-			throw UnableToReadFile::fromLocation($path, "File not found");
+			throw FileNotFoundException::create($path);
 		}
 		try {
 			return $this->service->filesRead($file);

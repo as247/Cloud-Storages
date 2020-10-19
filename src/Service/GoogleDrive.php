@@ -215,48 +215,59 @@ class GoogleDrive
 		}
 		$timerStart=microtime(true);
 		$client=$this->service->getClient();
-		$client->setUseBatch(true);
-		$batch = $this->service->createBatch();
+		$collectOthers=false;
 		$q='trashed = false and "%s" in parents and name = "%s"';
-		$args = [
+		$argsMatchName = [
 			'pageSize' => 2,
 			'q' =>sprintf($q,$parent,$name,static::DIR_MIME),
 		];
-		$filesMatchedName=$this->filesListFiles($args);
-		$q='trashed = false and "%s" in parents';
-		if($mineType){
-			$q.=" and mimeType ".$mineType;
-		}
-		$args = [
-			'pageSize' => 50,
-			'q' =>sprintf($q,$parent,$name,static::DIR_MIME),
-		];
-		$otherFiles=$this->filesListFiles($args);
-		$batch->add($filesMatchedName,'matched');
-		$batch->add($otherFiles,'others');
-		$results = $batch->execute();
-		$files=[];
-		$isFullResult=empty($mineType);//if limited to a mime type so it is not full result
+		if($collectOthers) {
+			$client->setUseBatch(true);
+			$batch = $this->service->createBatch();
 
-		foreach ($results as $key => $result) {
-			if ($result instanceof Google_Service_Drive_FileList) {
-				if($key==='response-matched'){
-					if(count($result)>1){
-						throw new ApiException("Duplicated file ".$name.' in '.$parent);
+			$filesMatchedName=$this->filesListFiles($argsMatchName);
+			$q='trashed = false and "%s" in parents';
+			if($mineType){
+				$q.=" and mimeType ".$mineType;
+			}
+			$argsOthers = [
+				'pageSize' => 50,
+				'q' =>sprintf($q,$parent,$name,static::DIR_MIME),
+			];
+			$otherFiles=$this->filesListFiles($argsOthers);
+			$batch->add($filesMatchedName,'matched');
+			$batch->add($otherFiles,'others');
+			$results = $batch->execute();
+			$files=[];
+			$isFullResult=empty($mineType);//if limited to a mime type so it is not full result
+			if(!isset($results['response-others'])){
+				$isFullResult=false;
+			}
+			foreach ($results as $key => $result) {
+				if ($result instanceof Google_Service_Drive_FileList) {
+					if($key==='response-matched'){
+						if(count($result)>1){
+							throw new ApiException("Duplicated file ".$name.' in '.$parent);
+						}
 					}
-				}
-				foreach ($result as $file) {
-					if (!isset($files[$file->id])) {
-						$files[$file->id] = $file;
+					foreach ($result as $file) {
+						if (!isset($files[$file->id])) {
+							$files[$file->id] = $file;
+						}
 					}
-				}
-				if ($key === 'response-others' && $result->nextPageToken) {
-					$isFullResult = false;
+					if ($key === 'response-others' && $result->nextPageToken) {
+						$isFullResult = false;
+					}
 				}
 			}
+			$client->setUseBatch(false);
+		}else{
+			$isFullResult=false;
+			$list=$this->filesListFiles($argsMatchName);
+			$files=$list->getFiles();
 		}
-		$client->setUseBatch(false);
-		$this->logRequest('files.list.batch',[
+
+		$this->logRequest('files.list.by_name',[
 		    'query'=>'find for '.$name.' in '.$parent,
             'duration'=>microtime(true)-$timerStart]);
 		$list=new Google_Service_Drive_FileList();

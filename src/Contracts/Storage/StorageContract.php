@@ -53,6 +53,7 @@ interface StorageContract
 	 * @param string $path
 	 * @return resource
 	 * @throws UnableToReadFile
+	 * @throws FileNotFoundException
 	 * @throws FilesystemException
 	 */
 	public function readStream(string $path);

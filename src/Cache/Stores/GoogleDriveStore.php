@@ -13,7 +13,9 @@ class GoogleDriveStore extends ArrayStore
 		return $this->mapFile($path,$id,GoogleDrive::DIR_MIME);
 	}
 	function mapFile($path,$id,$mimeType=''){
+		$path=Path::clean($path);
 		if(!$id){
+			$this->forget($path);
 			return $this;
 		}
 		$file=$id;
@@ -22,7 +24,7 @@ class GoogleDriveStore extends ArrayStore
 			$file->setId($id);
 			$file->setMimeType($mimeType);
 		}
-		$this->forever(Path::clean($path),$file);
+		$this->forever($path,$file);
 		return $this;
 	}
 

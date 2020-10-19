@@ -36,40 +36,34 @@ class GoogleDriveObjectStorage implements ObjectStorage
 
 	public function readObject($urn)
 	{
-		$this->storageCache->mapFile($urn,$this->objCache->get($urn));
-		try {
-			return $this->storage->readStream($urn);
-		} catch (FilesystemException $e) {
-			$this->objCache->forget($urn);
-			throw $e;
-		}
+		$urn=$this->sanitizeUrn($urn);
+		$this->updateCache($urn);
+		return $this->storage->readStream($urn);
 	}
 
 	public function writeObject($urn, $stream)
 	{
+		$urn=$this->sanitizeUrn($urn);
 		$this->storageCache->mapFile($urn,$this->objCache->get($urn));
+		print_r($this->storageCache->query('/'));
 		try {
 			$this->storage->writeStream($urn, $stream);
 		} catch (FilesystemException $e) {
 			$this->objCache->forget($urn);
 			throw $e;
 		}
-		try {
-			$meta = $this->storage->getMetadata($urn);
-			$this->objCache->put($urn,$meta['@id']);
-		} catch (FileNotFoundException $e) {
-			$this->objCache->forget($urn);
-			throw $e;
-		}
+		//File write success update cache
+		$this->updateCache($urn);
 	}
 
 	public function deleteObject($urn)
 	{
+		$urn=$this->sanitizeUrn($urn);
 		$this->storageCache->mapFile($urn,$this->objCache->get($urn));
 		try {
 			$this->storage->delete($urn);
 		} catch (FileNotFoundException $e) {
-
+			//Already deleted do nothing
 		} finally {
 			$this->objCache->forget($urn);
 		}
@@ -77,12 +71,30 @@ class GoogleDriveObjectStorage implements ObjectStorage
 
 	public function objectExists($urn)
 	{
-		$this->storageCache->mapFile($urn,$this->objCache->get($urn));
+		$urn=$this->sanitizeUrn($urn);
 		try {
-			$this->storage->getMetadata($urn);
+			$this->updateCache($urn);
 			return true;
 		} catch (FileNotFoundException $e) {
 			return false;
 		}
+	}
+	protected function updateCache($urn){
+		$cached=$this->objCache->get($urn);
+		if($cached) {
+			$this->storageCache->mapFile($urn, $cached);
+		}
+		try {
+			$meta=$this->storage->getMetadata($urn);
+			$this->objCache->put($urn,$meta['@id']);
+			return true;
+		} catch (FileNotFoundException $e) {
+			$this->objCache->forget($urn);
+			throw $e;
+		}
+	}
+
+	protected function sanitizeUrn($urn){
+		return str_replace(['/','\\'],':',$urn);
 	}
 }
