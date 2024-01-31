@@ -627,4 +627,9 @@ class GoogleDrive extends Storage
 		}
 		throw FileNotFoundException::create(Path::clean($path));
 	}
+
+    public function temporaryUrl(string $path, \DateTimeInterface $expiresAt, Config $config = null): string
+    {
+        // TODO: Implement temporaryUrl() method.
+    }
 }

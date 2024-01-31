@@ -31,6 +31,9 @@ class Path
 	public static function explode($path){
 		return static::cleanPath($path,'array');
 	}
+    public static function join(...$paths){
+        return static::cleanPath($paths);
+    }
 	protected static function cleanPath($path,$return='string'){
         if(is_array($path)){
             $path=join('/',$path);

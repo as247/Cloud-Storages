@@ -124,4 +124,6 @@ interface StorageContract
 	 * @throws FilesystemException
 	 */
 	public function getMetadata($path): FileAttributes;
+
+    public function temporaryUrl(string $path, \DateTimeInterface $expiresAt, Config $config=null): string;
 }

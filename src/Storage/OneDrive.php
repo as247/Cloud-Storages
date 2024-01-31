@@ -37,8 +37,12 @@ class OneDrive extends Storage
 	{
 		return $this->service;
 	}
+    public function temporaryUrl(string $path, \DateTimeInterface $expiresAt, Config $config = null): string
+    {
+        return $this->getMetadata($path)['@downloadUrl']??'';
+    }
 
-	/**
+    /**
 	 * @param string $directory
 	 * @param bool $recursive
 	 * @return Generator
