@@ -3,7 +3,7 @@
 
 namespace As247\CloudStorages\Service;
 
-use As247\CloudStorages\Exception\ApiException;
+use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Support\StorageAttributes;
 use Google\Auth\HttpHandler\Guzzle5HttpHandler;
 use Google\Auth\HttpHandler\HttpHandlerFactory;
@@ -247,7 +247,7 @@ class GoogleDrive
 				if ($result instanceof Google_Service_Drive_FileList) {
 					if($key==='response-matched'){
 						if(count($result)>1){
-							throw new ApiException("Duplicated file ".$name.' in '.$parent);
+							throw new StorageException("Duplicated file ".$name.' in '.$parent);
 						}
 					}
 					foreach ($result as $file) {

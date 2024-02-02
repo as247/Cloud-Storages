@@ -2,14 +2,11 @@
 
 namespace As247\CloudStorages\Storage;
 
-use As247\CloudStorages\Exception\FileNotFoundException;
-use As247\CloudStorages\Exception\UnableToCreateDirectory;
-use As247\CloudStorages\Exception\UnableToWriteFile;
+use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Service\AListService;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
 use As247\CloudStorages\Support\Path;
-use GuzzleHttp\Exception\ClientException;
 use Traversable;
 
 class AList extends Storage
@@ -29,24 +26,16 @@ class AList extends Storage
 
     public function writeStream(string $path, $contents, Config $config = null): void
     {
-        try {
-            $this->service->put($path, $contents);
-        } catch (ClientException $e) {
-            throw UnableToWriteFile::atLocation($path, $e->getMessage());
-        }
+        $this->service->put($path, $contents);
     }
 
     public function readStream(string $path)
     {
-        try {
-            $contents = $this->service->read($path);
-            if ($contents) {
-                return $contents;
-            }
-            throw new FileNotFoundException($path);
-        } catch (ClientException $e) {
-            throw new FileNotFoundException($path);
+        $contents = $this->service->read($path);
+        if ($contents) {
+            return $contents;
         }
+        throw new StorageException('Unable to read file: ' . $path,'readStream');
     }
 
     public function delete(string $path): void
@@ -64,41 +53,35 @@ class AList extends Storage
 
     public function createDirectory(string $path, Config $config = null): void
     {
-        try {
-            $created=$this->service->mkdir($path);
-            if(!$created){
-                throw UnableToCreateDirectory::atLocation($path);
-            }
-        }catch (ClientException $e){
-            throw UnableToCreateDirectory::atLocation($path, $e->getMessage());
+        $created=$this->service->mkdir($path);
+        if(!$created){
+            throw new StorageException('Unable to create directory: ' . $path,'createDirectory');
         }
     }
 
     public function setVisibility(string $path, $visibility): void
     {
-        // TODO: Implement setVisibility() method.
+        throw new StorageException('setVisibility is not supported by AList','setVisibility');
     }
 
     public function listContents(string $path, bool $deep): Traversable
     {
-        try {
-            $results = $this->service->listContents($path);
-            foreach ($results as $id => $result) {
-                $result = $this->service->normalizeMetadata($result, rtrim($path,'\/') . '/' . $result['name']);
-                yield $id => $result;
-                if ($deep && $result['type'] === 'dir') {
-                    yield from $this->listContents($result['path'], $deep);
-                }
-            }
-        } catch (ClientException $e) {
-            if ($e->getResponse()->getStatusCode() === 404) {
-                yield from [];
+        $results = $this->service->listContents($path);
+        foreach ($results as $id => $result) {
+            $result = $this->service->normalizeMetadata($result, rtrim($path,'\/') . '/' . $result['name']);
+            yield $id => $result;
+            if ($deep && $result['type'] === 'dir') {
+                yield from $this->listContents($result['path'], $deep);
             }
         }
     }
 
     public function move(string $source, string $destination, Config $config = null): void
     {
+        if(Path::clean($source)===Path::clean($destination)){
+            throw new StorageException('Source and destination are the same: ' . $source,'move');
+        }
+        $this->getMetadata($source);
         $this->copy($source,$destination,$config);
         $this->delete($source);
     }
@@ -124,7 +107,7 @@ class AList extends Storage
     {
         $meta=$this->service->get($path);
         if(!$meta){
-            throw new FileNotFoundException($path);
+            throw new StorageException('File not found at path: ' . $path,'getMetadata');
         }
         $attributes=$this->service->normalizeMetadata($meta,$path);
         return new FileAttributes($attributes);

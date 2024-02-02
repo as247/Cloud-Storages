@@ -3,10 +3,9 @@
 
 namespace As247\CloudStorages\Exception;
 
-use Exception;
 use Throwable;
 
-class FileNotFoundException extends Exception implements FilesystemException
+class FileNotFoundException extends AbstractException
 {
 	/**
 	 * @var string

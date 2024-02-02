@@ -9,8 +9,7 @@ use As247\CloudStorages\Cache\Stores\NullStore;
 use As247\CloudStorages\Cache\Stores\SqliteCache;
 use As247\CloudStorages\Contracts\Storage\ObjectStorage;
 use As247\CloudStorages\Exception\FileNotFoundException;
-use As247\CloudStorages\Exception\FilesystemException;
-use As247\CloudStorages\Exception\ObjectStorageException;
+use As247\CloudStorages\Exception\StorageException;
 
 class GoogleDriveObjectStorage implements ObjectStorage
 {
@@ -30,7 +29,7 @@ class GoogleDriveObjectStorage implements ObjectStorage
 		}
 		$this->storageCache=$drive->getCache();
 		if($this->storageCache->getStore() instanceof GoogleDrivePersistentStore){
-			throw new ObjectStorageException('Persistent cache not work with object storage');
+			throw new StorageException('Persistent cache not work with object storage');
 		}
 	}
 
@@ -47,7 +46,7 @@ class GoogleDriveObjectStorage implements ObjectStorage
 		$this->mapCache($urn);
 		try {
 			$this->storage->writeStream($urn, $stream);
-		} catch (FilesystemException $e) {
+		} catch (StorageException $e) {
 			$this->cache->forget($urn);
 			throw $e;
 		}

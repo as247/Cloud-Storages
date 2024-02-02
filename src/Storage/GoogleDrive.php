@@ -7,17 +7,7 @@ use As247\CloudStorages\Cache\PathCache;
 use As247\CloudStorages\Cache\Stores\GoogleDrivePersistentStore;
 use As247\CloudStorages\Cache\Stores\GoogleDriveStore;
 use As247\CloudStorages\Exception\FileNotFoundException;
-use As247\CloudStorages\Exception\InvalidStreamProvided;
-use As247\CloudStorages\Exception\InvalidVisibilityProvided;
-use As247\CloudStorages\Exception\UnableToCopyFile;
-use As247\CloudStorages\Exception\UnableToCreateDirectory;
-use As247\CloudStorages\Exception\UnableToDeleteDirectory;
-use As247\CloudStorages\Exception\UnableToDeleteFile;
-use As247\CloudStorages\Exception\UnableToMoveFile;
-use As247\CloudStorages\Exception\UnableToReadFile;
-use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
-use As247\CloudStorages\Exception\UnableToSetVisibility;
-use As247\CloudStorages\Exception\UnableToWriteFile;
+use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Service\StreamWrapper;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
@@ -96,12 +86,12 @@ class GoogleDrive extends Storage
 	{
 		$path = Path::clean($path);
 		if ($this->isFile($path)) {
-			throw UnableToCreateDirectory::atLocation($path, "File already exists");
+			throw new StorageException("File already exists at $path");
 		}
 		if (isset($this->maxFolderLevel)) {
 			$nestedFolderLevel = count(explode('/', $path)) - 1;
 			if ($nestedFolderLevel > $this->maxFolderLevel) {// -1 for /
-				throw UnableToCreateDirectory::atLocation($path, "Maximum nesting folder exceeded");
+                throw new StorageException("Maximum nesting folder exceeded");
 			}
 		}
 		$this->logger->log("mkdir: $path");
@@ -112,7 +102,7 @@ class GoogleDrive extends Storage
 				$currentPaths[] = $name;
 				$currentPathString = join('/', $currentPaths);
 				if ($this->isFile($currentPaths)) {
-					throw  UnableToCreateDirectory::atLocation($currentPathString, "File already exists");
+                    throw new StorageException("File already exists at $currentPathString");
 				}
 
 				$created = $this->service->dirCreate($name, $parent);
@@ -143,14 +133,14 @@ class GoogleDrive extends Storage
 	public function delete(string $path): void
 	{
 		if ($this->isDirectory($path)) {
-			throw UnableToDeleteFile::atLocation($path, "$path is directory");
+            throw new StorageException("$path is directory");
 		}
 		$file = $this->find($path);
 		if (!$file) {//already deleted
 			throw FileNotFoundException::create($path);
 		}
 		if ($file->getId() === $this->root) {
-			throw UnableToDeleteDirectory::atLocation($path, "Root directory cannot be deleted");
+            throw new StorageException("Root directory cannot be deleted");
 		}
 		$this->service->filesDelete($file);
 		$this->cache->delete($path);
@@ -163,14 +153,14 @@ class GoogleDrive extends Storage
 	public function deleteDirectory(string $path): void
 	{
 		if ($this->isFile($path)) {
-			throw UnableToDeleteDirectory::atLocation($path, "$path is file");
+            throw new StorageException("$path is file");
 		}
 		$file = $this->find($path);
 		if (!$file) {//already deleted
 			throw FileNotFoundException::create($path);
 		}
 		if ($file->getId() === $this->root) {
-			throw UnableToDeleteDirectory::atLocation($path, "Root directory cannot be deleted");
+            throw new StorageException("Root directory cannot be deleted");
 		}
 		$this->service->filesDelete($file);
 		$this->cache->deleteDir($path);
@@ -219,15 +209,13 @@ class GoogleDrive extends Storage
 		$toPath = Path::clean($toPath);
 		$from = $this->find($fromPath);
 		if (!$from) {
-			throw UnableToCopyFile::fromLocationTo($fromPath, $toPath, "$fromPath not exists");
+			throw new StorageException("$fromPath not found");
 		}
 		if ($this->isDirectory($fromPath)) {
-			throw UnableToCopyFile::fromLocationTo($fromPath, $toPath, "$fromPath is directory");
+            throw new StorageException("$fromPath is directory");
 		}
-
-
 		if ($this->isDirectory($toPath)) {
-			throw UnableToCopyFile::fromLocationTo($fromPath, $toPath, "$toPath is directory");
+			throw new StorageException("$toPath is directory");
 		}
 		if ($this->has($toPath)) {
 			$this->delete($toPath);
@@ -253,14 +241,14 @@ class GoogleDrive extends Storage
 		}
 		$from = $this->find($fromPath);
 		if (!$from) {
-			throw UnableToMoveFile::fromLocationTo($fromPath, $toPath, "$fromPath not found");
+			throw new StorageException("$fromPath not found");
 		}
 		$oldParent = $from->getParents()[0];
 		$newParentId = null;
 		if ($this->isFile($from)) {//we moving file
 			if ($this->has($toPath)) {
 				if ($this->isDirectory($toPath)) {//Destination path is directory
-					throw UnableToMoveFile::fromLocationTo($fromPath, $toPath, "Destination path exists as a directory, cannot overwrite");
+                    throw new StorageException("$toPath is directory and cannot be overwritten");
 				} else {
 					$this->delete($toPath);
 				}
@@ -268,7 +256,7 @@ class GoogleDrive extends Storage
 		} else {//we moving directory
 			if ($this->has($toPath)) {
 				if ($this->isFile($toPath)) {//Destination path is file
-					throw UnableToMoveFile::fromLocationTo($fromPath, $toPath, "Destination path exists as a file, cannot overwrite");
+                    throw new StorageException("$toPath is file and cannot be overwritten");
 				} else {
 					$this->deleteDirectory($toPath);//overwrite, remove it first
 				}
@@ -288,7 +276,7 @@ class GoogleDrive extends Storage
 
 		$result=$this->service->filesUpdate($from->getId(), $file, $opts);
 		if(!in_array($newParentId,$result->getParents())){
-			throw UnableToMoveFile::fromLocationTo($fromPath, $toPath,'Service update failure');
+            throw new StorageException("Service update failure");
 		}
 		$this->cache->move($fromPath, $toPath);
 		$this->logger->log("Moved file: $fromPath -> $toPath");
@@ -309,11 +297,11 @@ class GoogleDrive extends Storage
 		try {
 			$contents = StreamWrapper::wrap($contents);
 		}catch (InvalidArgumentException $e){
-			throw new InvalidStreamProvided("Invalid contents. ".$e->getMessage());
+			throw new StorageException("Invalid contents. ".$e->getMessage());
 		}
 		$contents->rewind();
 		if ($this->isDirectory($path)) {
-			throw UnableToWriteFile::atLocation($path, "$path is directory");
+			throw new StorageException("$path is directory");
 		}
 
 		$paths = $this->parsePath($path);
@@ -322,7 +310,7 @@ class GoogleDrive extends Storage
 		//Try to find file before, because if it was removed before, ensure directory will recreate same directory and it may available again
 		$parentId = $this->ensureDirectory($dirName);
 		if (!$parentId) {
-			throw UnableToWriteFile::atLocation($path, "Not able to create parent directory $dirName");
+			throw new StorageException("Not able to create parent directory ".join('/',$dirName));
 		}
 		$file = $this->find($path);
 		if (!$file) {
@@ -355,7 +343,7 @@ class GoogleDrive extends Storage
 			return $this->getMetadata($path);
 		}
 
-		throw UnableToWriteFile::atLocation($path);
+		throw new StorageException("Unable to upload file: $path");
 	}
 
 	/**
@@ -431,7 +419,7 @@ class GoogleDrive extends Storage
 	protected function publish(string $path)
 	{
 		if (!$file = $this->find($path)) {
-			throw UnableToSetVisibility::atLocation($path, 'File not found');
+            throw new StorageException("File $path not found");
 		}
 		$this->service->publish($file);
 		$this->cache->put($path,$file);
@@ -445,7 +433,7 @@ class GoogleDrive extends Storage
 	protected function unPublish(string $path)
 	{
 		if (!$file = $this->find($path)) {
-			throw UnableToSetVisibility::atLocation($path, 'File not found');
+            throw new StorageException("File $path not found");
 		}
 		$this->service->unPublish($file);
 		$this->cache->put($path,$file);
@@ -462,7 +450,7 @@ class GoogleDrive extends Storage
 		} elseif ($visibility === Storage::VISIBILITY_PRIVATE) {
 			$this->unPublish($path);
 		} else {
-			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [Storage::VISIBILITY_PUBLIC, Storage::VISIBILITY_PRIVATE]));
+			throw new InvalidArgumentException('Visibility must be either "public" or "private".');
 		}
 	}
 
@@ -476,7 +464,7 @@ class GoogleDrive extends Storage
 		try {
 			return $this->service->filesRead($file);
 		} catch (GuzzleException $e) {
-			throw UnableToReadFile::fromLocation($path, $e->getMessage(), $e);
+			throw new StorageException("Unable to read file: $path", 'readStream', $e);
 		}
 	}
 
@@ -623,7 +611,7 @@ class GoogleDrive extends Storage
 
 				return FileAttributes::fromArray($attributes);
 			}
-			throw UnableToRetrieveMetadata::create($path, 'metadata');
+			throw new StorageException("Unable to get metadata for file at path: $path");
 		}
 		throw FileNotFoundException::create(Path::clean($path));
 	}

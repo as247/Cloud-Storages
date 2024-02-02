@@ -4,13 +4,7 @@
 namespace As247\CloudStorages\Storage;
 
 use As247\CloudStorages\Exception\FileNotFoundException;
-use As247\CloudStorages\Exception\InvalidVisibilityProvided;
-use As247\CloudStorages\Exception\UnableToCreateDirectory;
-use As247\CloudStorages\Exception\UnableToDeleteDirectory;
-use As247\CloudStorages\Exception\UnableToDeleteFile;
-use As247\CloudStorages\Exception\UnableToReadFile;
-use As247\CloudStorages\Exception\UnableToRetrieveMetadata;
-use As247\CloudStorages\Exception\UnableToWriteFile;
+use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Support\Config;
 use As247\CloudStorages\Support\FileAttributes;
 use Generator;
@@ -75,9 +69,9 @@ class OneDrive extends Storage
 				$this->setVisibility($path, $visibility);
 			}
 		} catch (ClientException $e) {
-			throw UnableToWriteFile::atLocation($path, $e->getMessage(), $e);
+            throw new StorageException($e->getMessage(),'writeStream',$e);
 		} catch (GraphException $e) {
-			throw UnableToWriteFile::atLocation($path, $e->getMessage(), $e);
+            throw new StorageException($e->getMessage(),'writeStream',$e);
 		}
 	}
 
@@ -86,9 +80,9 @@ class OneDrive extends Storage
 		try {
 			return $this->service->download($path);
 		} catch (ClientException $e) {
-			throw UnableToReadFile::fromLocation($path, $e->getMessage(), $e);
+            throw new StorageException($e->getMessage(),'readStream',$e);
 		} catch (GraphException $e) {
-			throw UnableToReadFile::fromLocation($path, $e->getMessage(), $e);
+            throw new StorageException($e->getMessage(),'readStream',$e);
 		}
 	}
 
@@ -101,20 +95,16 @@ class OneDrive extends Storage
 			if ($e->getResponse()->getStatusCode() === 404) {
 				throw FileNotFoundException::create($path);
 			}
-			throw UnableToDeleteFile::atLocation($path, $e->getMessage(), $e);
+            throw new StorageException($e->getMessage(),'delete',$e);
 		} catch (GraphException $e) {
-			throw UnableToDeleteFile::atLocation($path, $e->getMessage(), $e);
+            throw new StorageException($e->getMessage(),'delete',$e);
 		}
 	}
 
 	public function deleteDirectory(string $path): void
 	{
-		try {
-			$this->delete($path);
-			$this->cache->deleteDir($path);
-		}catch (UnableToDeleteFile $e){
-			throw UnableToDeleteDirectory::atLocation($e->location(),$e->reason(),$e->getPrevious());
-		}
+        $this->delete($path);
+        $this->cache->deleteDir($path);
 	}
 
 	public function createDirectory(string $path, Config $config = null): void
@@ -125,12 +115,12 @@ class OneDrive extends Storage
 
 			$file = FileAttributes::fromArray($this->service->normalizeMetadata($response, $path));
 			if (!$file->isDir()) {
-				throw UnableToCreateDirectory::atLocation($path, 'File already exists');
+                throw new StorageException('File already exists at '.$path,'createDirectory');
 			}
 		} catch (GraphException $e) {
-			throw UnableToCreateDirectory::atLocation($path, $e->getMessage());
+            throw new StorageException($e->getMessage(),'createDirectory');
 		} catch (ClientException $e) {
-			throw UnableToCreateDirectory::atLocation($path, $e->getMessage());
+            throw new StorageException($e->getMessage(),'createDirectory');
 		}
 	}
 
@@ -148,7 +138,7 @@ class OneDrive extends Storage
 			$this->service->unPublish($path);
 			$this->cache->forget($path);
 		} else {
-			throw InvalidVisibilityProvided::withVisibility($visibility, join(' or ', [Storage::VISIBILITY_PUBLIC, Storage::VISIBILITY_PRIVATE]));
+			throw new \InvalidArgumentException('Unknown visibility: ' . $visibility);
 		}
 	}
 
@@ -200,11 +190,11 @@ class OneDrive extends Storage
 				$this->cache->put($path,false);
 				throw new FileNotFoundException($path, 0, $e);
 			}
-			throw UnableToRetrieveMetadata::create($path, 'metadata', '', $e);
+			throw new StorageException($e->getMessage(),'getMetadata',$e);
 		} catch (FileNotFoundException $e){
 			throw $e;
 		}catch (Throwable $e) {
-			throw UnableToRetrieveMetadata::create($path, 'metadata', '', $e);
+			throw new StorageException($e->getMessage(),'getMetadata',$e);
 		}
 	}
 

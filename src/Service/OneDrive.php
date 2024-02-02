@@ -4,8 +4,7 @@
 namespace As247\CloudStorages\Service;
 
 use ArrayObject;
-use As247\CloudStorages\Exception\InvalidPathException;
-use As247\CloudStorages\Exception\InvalidStreamProvided;
+use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Support\Path;
 use As247\CloudStorages\Support\StorageAttributes;
 use Generator;
@@ -241,7 +240,7 @@ class OneDrive
 		try {
 			$stream = StreamWrapper::wrap($contents);
 		}catch (InvalidArgumentException $e){
-			throw new InvalidStreamProvided("Invalid contents. ".$e->getMessage());
+			throw new StorageException("Invalid contents. ".$e->getMessage());
 		}
 
 		$this->createDirectory(dirname($path));
@@ -310,7 +309,7 @@ class OneDrive
 		$invalidChars=['"','*',':','<','>','?', '|'];
 		foreach ($invalidChars as $char){
 			if(strpos($path,$char)!==false){
-				throw InvalidPathException::atLocation($path,$invalidChars);
+                throw new StorageException("Invalid character $char in path $path");
 			}
 		}
 	}

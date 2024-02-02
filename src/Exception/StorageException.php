@@ -1,10 +1,8 @@
 <?php
 
-
 namespace As247\CloudStorages\Exception;
 
-
-interface FilesystemException
+class StorageException extends AbstractException
 {
 
 }
