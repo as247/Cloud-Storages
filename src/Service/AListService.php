@@ -139,7 +139,7 @@ class AListService
          * 'hashinfo' => 'null',
          * 'hash_info' => NULL,
          */
-        $visibility = StorageContract::VISIBILITY_PUBLIC;
+        $visibility = StorageContract::VISIBILITY_PRIVATE;
         return [
             StorageAttributes::ATTRIBUTE_PATH => $path,
             StorageAttributes::ATTRIBUTE_LAST_MODIFIED => strtotime($file['modified']),
@@ -205,6 +205,6 @@ class AListService
             'odt'=>'application/vnd.oasis.opendocument.text',
             'ods'=>'application/vnd.oasis.opendocument.spreadsheet',
         ];
-        return $mimes[$ext]??'';
+        return $mimes[$ext]??'application/octet-stream';
     }
 }

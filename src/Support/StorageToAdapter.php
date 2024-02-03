@@ -5,6 +5,7 @@ namespace As247\CloudStorages\Support;
 
 
 use As247\CloudStorages\Contracts\Storage\StorageContract;
+use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Storage\AList;
 use As247\CloudStorages\Storage\GoogleDrive;
 use As247\CloudStorages\Storage\OneDrive;
@@ -87,7 +88,10 @@ trait StorageToAdapter
         try {
             $this->storage->delete($this->prefixer->prefixPath($path));
 
-        } catch (\Exception $e) {
+        }catch (FileNotFoundException $e){
+            return ;
+        }
+        catch (\Exception $e) {
             throw \League\Flysystem\UnableToDeleteFile::atLocation($path, $e->getMessage());
         }
     }
@@ -132,8 +136,7 @@ trait StorageToAdapter
     {
         $meta=$this->getMetadata($path);
         if($meta instanceof FileAttributes){
-            if($meta->mimeType()) {
-                //print_r($meta);
+            if($meta->mimeType()!=='application/octet-stream') {
                 return $meta;
             }
         }
@@ -179,7 +182,7 @@ trait StorageToAdapter
         try {
             $source = $this->prefixer->prefixPath($source);
             $destination = $this->prefixer->prefixPath($destination);
-            $this->storage->move($source, $destination, $this->convertConfig(new Config()));
+            $this->storage->move($source, $destination, $this->convertConfig($config));
         } catch (\Exception $e) {
             throw \League\Flysystem\UnableToMoveFile::fromLocationTo($source, $destination, $e);
         }
@@ -188,8 +191,10 @@ trait StorageToAdapter
     public function copy(string $source, string $destination, Config $config): void
     {
         try {
-            $config = $this->convertConfig(new Config());
+            $config = $this->convertConfig($config);
             $source = $this->prefixer->prefixPath($source);
+            //Flysystem expect to overwrite the file then we try to delete the destination file first
+            $this->delete($destination);
             $destination = $this->prefixer->prefixPath($destination);
             $this->storage->copy($source, $destination, $config);
         } catch (\Exception $e) {
@@ -237,6 +242,9 @@ trait StorageToAdapter
 
 	protected function convertConfig(Config $config=null)
 	{
+        if($config){
+            return new \As247\CloudStorages\Support\Config($config->toArray());
+        }
 		return new \As247\CloudStorages\Support\Config();
 	}
 

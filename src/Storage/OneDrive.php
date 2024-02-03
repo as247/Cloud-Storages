@@ -164,6 +164,7 @@ class OneDrive extends Storage
 	{
 		$this->service->copy($source, $destination);
 		$this->cache->forgetBranch($destination);
+        $this->setVisibility($destination, $this->getMetadata($source)->visibility());
 	}
 
 

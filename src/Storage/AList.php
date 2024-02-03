@@ -2,6 +2,7 @@
 
 namespace As247\CloudStorages\Storage;
 
+use As247\CloudStorages\Exception\FileNotFoundException;
 use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Service\AListService;
 use As247\CloudStorages\Support\Config;
@@ -13,6 +14,7 @@ class AList extends Storage
 {
     protected $service;
     protected $root = '';
+    protected $fakeVisibility=[];
     public function __construct($url, $options = [])
     {
         $this->service = new AListService($url, $options);
@@ -27,6 +29,9 @@ class AList extends Storage
     public function writeStream(string $path, $contents, Config $config = null): void
     {
         $this->service->put($path, $contents);
+        if($config){
+            $this->setVisibility($path,$config->get('visibility'));
+        }
     }
 
     public function readStream(string $path)
@@ -61,7 +66,9 @@ class AList extends Storage
 
     public function setVisibility(string $path, $visibility): void
     {
-        throw new StorageException('setVisibility is not supported by AList','setVisibility');
+        $this->getMetadata($path);
+        $this->fakeVisibility[$path]=$visibility;
+        //throw new StorageException('setVisibility is not supported by AList','setVisibility');
     }
 
     public function listContents(string $path, bool $deep): Traversable
@@ -96,6 +103,9 @@ class AList extends Storage
         $this->service->copy($srcDir,$tmpDir,basename($source));
         $this->service->rename(Path::join($tmpDir,basename($source)),basename($destination));
         $this->service->move($tmpDir,$dstDir,basename($destination));
+        if($config){
+            $this->setVisibility($destination,$this->getMetadata($source)->visibility());
+        }
 
     }
 
@@ -107,9 +117,12 @@ class AList extends Storage
     {
         $meta=$this->service->get($path);
         if(!$meta){
-            throw new StorageException('File not found at path: ' . $path,'getMetadata');
+            throw FileNotFoundException::create($path);
         }
         $attributes=$this->service->normalizeMetadata($meta,$path);
+        if(isset($this->fakeVisibility[$path])){
+            $attributes['visibility']=$this->fakeVisibility[$path];
+        }
         return new FileAttributes($attributes);
     }
 
