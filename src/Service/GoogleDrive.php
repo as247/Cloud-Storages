@@ -71,6 +71,8 @@ class GoogleDrive
 	protected $additionalFields;
 	protected $defaultParams;
 	protected $service;
+    //Add prefix / when original root has /
+    protected $rootPrefix='';
 	use HasLogger;
 	public function __construct(Google_Service_Drive $service,$options=[])
 	{
@@ -97,6 +99,14 @@ class GoogleDrive
 			}
 			$this->enableTeamDriveSupport();
 		}
+        $root=$options['prefix']??'';
+
+        if($root){
+            $firstChar=substr($root,0,1);
+            if($firstChar==='/' || $firstChar==='\\'){
+                $this->rootPrefix=$firstChar;
+            }
+        }
 	}
 
 	public function isTeamDrive(){
@@ -112,7 +122,7 @@ class GoogleDrive
 	{
 		$id = $object->getId();
 		$result = [
-			StorageAttributes::ATTRIBUTE_PATH => is_string($path)? ltrim($path,'\/'):null,
+			StorageAttributes::ATTRIBUTE_PATH => is_string($path) ? $this->rootPrefix.ltrim($path,'\/'):null,
 			StorageAttributes::ATTRIBUTE_TYPE => $object->mimeType === self::DIR_MIME ? StorageAttributes::TYPE_DIRECTORY : StorageAttributes::TYPE_FILE,
 			StorageAttributes::ATTRIBUTE_LAST_MODIFIED=>strtotime($object->getModifiedTime())
 		];

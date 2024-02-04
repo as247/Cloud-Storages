@@ -63,6 +63,9 @@ class GoogleDrive extends Storage
 	protected function setRoot($options)
 	{
 		$root = $options['root'];
+        if(empty($root)) {
+            throw new StorageException("Root folder id is required");
+        }
 		$this->root = $root;
 		if(isset($options['cache']) && is_string($options['cache'])){
 			$options['cache'] = new PathCache(new GoogleDrivePersistentStore($options['cache']));

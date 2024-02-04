@@ -37,7 +37,6 @@ class OneDrive
             if($firstChar==='/' || $firstChar==='\\'){
                 $this->rootPrefix=$firstChar;
             }
-
         }
 		$this->setupLogger($options);
 	    $this->graph=$graph;
