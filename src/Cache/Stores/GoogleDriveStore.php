@@ -23,6 +23,7 @@ class GoogleDriveStore extends ArrayStore
 			$file = new Google_Service_Drive_DriveFile();
 			$file->setId($id);
 			$file->setMimeType($mimeType);
+            $file->setPermissions([]);
 		}
 		$this->forever($path,$file);
 		return $this;

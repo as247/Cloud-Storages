@@ -62,7 +62,7 @@ trait StorageToAdapter
             $config = $this->convertConfig($config);
             $this->storage->writeStream($this->prefixer->prefixPath($path), $contents, $config);
         }catch (\Exception $e){
-            throw UnableToWriteFile::atLocation($path, $e->getMessage());
+            throw UnableToWriteFile::atLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -76,7 +76,7 @@ trait StorageToAdapter
         try {
             return $this->storage->readStream($this->prefixer->prefixPath($path));
         } catch (\Exception $e) {
-            throw \League\Flysystem\UnableToReadFile::fromLocation($path, $e);
+            throw \League\Flysystem\UnableToReadFile::fromLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -92,7 +92,7 @@ trait StorageToAdapter
             return ;
         }
         catch (\Exception $e) {
-            throw \League\Flysystem\UnableToDeleteFile::atLocation($path, $e->getMessage());
+            throw \League\Flysystem\UnableToDeleteFile::atLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -104,7 +104,7 @@ trait StorageToAdapter
         try {
             $this->storage->deleteDirectory($this->prefixer->prefixPath($path));
         } catch(\Exception $e){
-            throw \League\Flysystem\UnableToDeleteDirectory::atLocation($path, $e->getMessage());
+            throw \League\Flysystem\UnableToDeleteDirectory::atLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -114,7 +114,7 @@ trait StorageToAdapter
             $config = $this->convertConfig($config);
             $this->storage->createDirectory($this->prefixer->prefixPath($path), $config);
         } catch (\Exception $e) {
-            throw \League\Flysystem\UnableToCreateDirectory::atLocation($path, $e->getMessage());
+            throw \League\Flysystem\UnableToCreateDirectory::atLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -123,7 +123,7 @@ trait StorageToAdapter
         try {
             $this->storage->setVisibility($this->prefixer->prefixPath($path), $visibility);
         }catch (\Exception $e){
-            throw new \League\Flysystem\UnableToSetVisibility($path, 0, $e);
+            throw \League\Flysystem\UnableToSetVisibility::atLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -220,7 +220,7 @@ trait StorageToAdapter
                 $meta->mimeType()
             );
 		}  catch (\Exception $e) {
-            throw new UnableToRetrieveMetadata("Unable to retrieve metadata for file at path: {$path}", 0, $e);
+            throw UnableToRetrieveMetadata::create($path, 'metadata', $e);
         }
     }
 
@@ -229,7 +229,7 @@ trait StorageToAdapter
         try {
             return $this->storage->temporaryUrl($this->prefixer->prefixPath($path), $expiresAt, $this->convertConfig($config));
         } catch (\Exception $e) {
-            throw new \League\Flysystem\UnableToRetrieveMetadata("Unable to retrieve metadata for file at path: {$path}", 0, $e);
+            throw UnableToRetrieveMetadata::create($path, 'temporaryUrl', $e);
         }
     }
 	protected function isRootPath($path)
@@ -257,25 +257,4 @@ trait StorageToAdapter
 		return new \As247\CloudStorages\Support\Config();
 	}
 
-	protected function shouldThrowException($e)
-	{
-		if(!$this->throwException){
-			return false;
-		}
-		if (empty($this->exceptExceptions)) {
-			return $this->throwException;
-		}
-		return !in_array(get_class($e), $this->exceptExceptions);
-	}
-
-	public function setExcerptExceptions($exceptions)
-	{
-		$this->exceptExceptions = $exceptions;
-		return $this;
-	}
-
-	public function getExcerptExceptions()
-	{
-		return $this->exceptExceptions;
-	}
 }
