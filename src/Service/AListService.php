@@ -5,16 +5,26 @@ namespace As247\CloudStorages\Service;
 use As247\AList\AListClient;
 use As247\CloudStorages\Contracts\Storage\StorageContract;
 use As247\CloudStorages\Exception\ApiException;
+use As247\CloudStorages\Exception\StorageException;
 use As247\CloudStorages\Support\Path;
 use As247\CloudStorages\Support\StorageAttributes;
 
 class AListService
 {
     protected $client;
+    protected $rootPrefix='';
     public function __construct($url, $options = [])
     {
         if(empty($options['token'])){
-            throw new ApiException('AList token is required. Please check your configuration.');
+            throw new StorageException('AList token is required. Please check your configuration.');
+        }
+        $root=$options['root']??'';
+        if($root){
+            $firstChar=substr($root,0,1);
+            if($firstChar==='/' || $firstChar==='\\'){
+                $this->rootPrefix=$firstChar;
+            }
+
         }
         $this->client=new AListClient($url,$options['token'],$options['client']??[]);
     }
@@ -141,7 +151,7 @@ class AListService
          */
         $visibility = StorageContract::VISIBILITY_PRIVATE;
         return [
-            StorageAttributes::ATTRIBUTE_PATH => $path,
+            StorageAttributes::ATTRIBUTE_PATH => $this->rootPrefix.ltrim($path,'\/'),
             StorageAttributes::ATTRIBUTE_LAST_MODIFIED => strtotime($file['modified']),
             StorageAttributes::ATTRIBUTE_FILE_SIZE => $file['size'],
             StorageAttributes::ATTRIBUTE_TYPE => $file['is_dir'] ? 'dir' : 'file',

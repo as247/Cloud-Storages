@@ -24,10 +24,21 @@ class OneDrive
 		'withLink' => true
 	];
 	protected $options;
+    //Add prefix / when original root has /
+    protected $rootPrefix='';
 	use HasLogger;
 	public function __construct(Graph $graph,$options=[])
 	{
 		$this->options=$options;
+        $root=$options['root']??'';
+
+        if($root){
+            $firstChar=substr($root,0,1);
+            if($firstChar==='/' || $firstChar==='\\'){
+                $this->rootPrefix=$firstChar;
+            }
+
+        }
 		$this->setupLogger($options);
 	    $this->graph=$graph;
 	}
@@ -49,8 +60,8 @@ class OneDrive
 			}
 		}
 
-		return [
-			StorageAttributes::ATTRIBUTE_PATH => ltrim($path,'\/'),
+		$meta= [
+			StorageAttributes::ATTRIBUTE_PATH => $this->rootPrefix.ltrim($path,'\/'),
 			StorageAttributes::ATTRIBUTE_LAST_MODIFIED => strtotime($response['lastModifiedDateTime']),
 			StorageAttributes::ATTRIBUTE_FILE_SIZE => $response['size'],
 			StorageAttributes::ATTRIBUTE_TYPE => isset($response['file']) ? 'file' : 'dir',
@@ -61,6 +72,8 @@ class OneDrive
 			'@shareLink'=>$shareLink,
 			'@downloadUrl' => $response['@microsoft.graph.downloadUrl']?? null,
 		];
+
+        return $meta;
 	}
 	function getEndpoint($path='',$action='',$params=[]){
 		$this->validatePath($path);
