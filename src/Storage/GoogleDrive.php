@@ -228,7 +228,12 @@ class GoogleDrive extends Storage
 		$file->setName($fileName);
 		$file->setParents($parents);
 		$newFile = $this->service->filesCopy($from->id, $file);
-		$this->cache->put($toPath, $newFile);
+        $visibilityForNewFile=$this->getMetadata($fromPath)->visibility();
+        if($config && $visibilityFromConfig = $config->get('visibility')){
+            $visibilityForNewFile=$visibilityFromConfig;
+        }
+        $this->cache->put($toPath, $newFile);
+        $this->setVisibility($toPath, $visibilityForNewFile);
 		$this->logger->log("Copied file: $fromPath -> $toPath");
 	}
 
