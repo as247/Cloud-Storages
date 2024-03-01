@@ -12,6 +12,11 @@ trait GetTemporaryUrl
         if(is_int($expiration)){
             $expiration=(new \DateTime())->setTimestamp($expiration);
         }
-        return $this->storage->temporaryUrl($this->applyPathPrefix($path),$expiration,$this->convertConfig($options));
+        if(isset($this->prefixer)){
+            $path=$this->prefixer->prefixPath($path);
+        }else{
+            $path=$this->applyPathPrefix($path);
+        }
+        return $this->storage->temporaryUrl($path,$expiration,$this->convertConfig($options));
     }
 }
