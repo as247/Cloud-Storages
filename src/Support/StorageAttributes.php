@@ -1,8 +1,6 @@
 <?php
 
-
 namespace As247\CloudStorages\Support;
-
 
 use ArrayAccess;
 use JsonSerializable;

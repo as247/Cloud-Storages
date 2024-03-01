@@ -1,6 +1,5 @@
 <?php
 
-
 namespace As247\CloudStorages\Support;
 
 use RuntimeException;

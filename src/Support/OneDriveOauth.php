@@ -13,7 +13,6 @@ use As247\CloudStorages\Contracts\Cache\Store;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
-
 class OneDriveOauth
 {
 	protected $clientId;

@@ -1,8 +1,6 @@
 <?php
 
-
 namespace As247\CloudStorages\Support;
-
 
 use As247\CloudStorages\Exception\PathOutsideRootException;
 use LogicException;

@@ -1,8 +1,6 @@
 <?php
 
-
 namespace As247\CloudStorages\Support;
-
 
 use As247\CloudStorages\Contracts\Storage\StorageContract;
 use As247\CloudStorages\Exception\FileNotFoundException;
@@ -13,9 +11,9 @@ use GuzzleHttp\Psr7\Utils;
 use League\Flysystem\Config;
 use League\Flysystem\Util;
 
-
 trait StorageToAdapterV1
 {
+    use ConfigConverter;
     /**
      * @var StorageContract
      */
@@ -319,22 +317,5 @@ trait StorageToAdapterV1
     {
         return $this->exceptExceptions;
     }
-
-	protected function convertConfig(Config $config=null)
-	{
-        if($config){
-            if(method_exists($config,'toArray')) {
-                return new \As247\CloudStorages\Support\Config($config->toArray());
-            }else{
-                return new \As247\CloudStorages\Support\Config([
-                    'copy_destination_same_as_source'=>$config->get('copy_destination_same_as_source'),
-                    'move_destination_same_as_source'=>$config->get('move_destination_same_as_source'),
-                    'visibility'=>$config->get('visibility'),
-                    'directory_visibility'=>$config->get('directory_visibility'),
-                ]);
-            }
-        }
-		return new \As247\CloudStorages\Support\Config();
-	}
 
 }
